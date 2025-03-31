@@ -321,7 +321,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                contour_levels=10, data_marker_size=50, cmap='viridis',
                coord_system='Ternary', segment_line_color='black', segment_line_width=1.0,
                left_label_color='red', right_label_color='blue', top_label_color='green',
-               edge_color='blue'):
+               edge_color='blue', cartesian_labels=[], cartesian_label_style={}):
     """
     Plot a single ternary plot on the given axis.
   
@@ -507,6 +507,13 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
     for start, end in zip(line_starts_transformed, line_ends_transformed):
         ax.plot([start[0], end[0]], [start[1], end[1]], color=segment_line_color, 
                 linewidth=segment_line_width)
+        
+    for x, y, text in cartesian_labels:
+        ax.text(
+            x, y, text,
+            fontsize=cartesian_label_style.get("fontsize", 10),
+            color=cartesian_label_style.get("color", "purple")
+        )
 
     return scatter_plot
 
@@ -549,10 +556,12 @@ Ternary_Chart_1
         for i in range(num_charts):
             with st.sidebar.expander(f'Customization Options - Chart {i+1}', expanded=(i==0)):
                 
+                # --- Data Choice --- 
                 st.markdown("### Data Choice")
                 col = st.selectbox(f"Select column for chart {i+1}", columns, key=f'col_{i}')
                 
-                st.markdown("### Grid Line Choices")
+                # --- Chart Line Choices ---
+                st.markdown("### Chart Line Choices")
                 num_lines = st.selectbox(f"Number of Grid Lines - Chart {i+1}", 
                                      [1, 5, 10], index=2, key=f'num_lines_{i}')
                 line_width = st.slider(f"Grid Line Width - Chart {i+1}", 
@@ -566,6 +575,7 @@ Ternary_Chart_1
                 edge_color = st.color_picker(f"Edge Color - Chart {i+1}", 
                                                "#008000", key=f'edge_color_{i}')
                 
+                # --- Transformation Choices ---
                 st.markdown("### Transformation Choices")
                 shift_x = st.number_input(f"X Shift - Chart {i+1}", 
                                           value=0, step=1, key=f'shift_x_{i}')
@@ -575,6 +585,8 @@ Ternary_Chart_1
                                   0, 360, 0, key=f'angle_{i}')
                 magnification = st.selectbox(f"Magnification - Chart {i+1}", 
                             [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], index=3, key=f'magnification{i}')
+                
+                # --- Tick Choices ---
                 left_tick = st.slider(f"Left Tick - Chart {i+1}", min_value=0, 
                         max_value=100, value=0, step=num_lines, key=f'left_tick_{i}')
                 right_tick = st.slider(f"Right Tick - Chart {i+1}", 
@@ -583,13 +595,15 @@ Ternary_Chart_1
                         max_value=100, value=0, step=num_lines, key=f'top_tick_{i}')
                 ticks = [["L", left_tick], ["R", right_tick], ["T", top_tick]]
                 
-                st.markdown("### Label Choices")
+                # --- Chart Label Choices ---
+                st.markdown("### Chart Label Choices")
                 labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
                                      value=False, key=f'labels_{i}')
                 left_label_color = st.color_picker(f"Bottom Label Color - Chart {i+1}", "#FF0000", key=f"left_label_color_{i}")
                 right_label_color = st.color_picker(f"Right Label Color - Chart {i+1}", "#0000FF", key=f"right_label_color_{i}")
                 top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#008000", key=f"top_label_color_{i}")
                 
+                # --- Contour Choices ---
                 st.markdown("### Contour Choices")
                 contours = st.checkbox(f"Enable Contours - Chart {i+1}", 
                                        value=False, key=f'contours_{i}')
@@ -598,6 +612,7 @@ Ternary_Chart_1
                 cmap = st.selectbox(f"Colormap - Chart {i+1}", colormap_options, 
                                     index=colormap_options.index("Blues"), key=f'cmap_{i}')
                 
+                # --- Marker Choices ---
                 st.markdown("### Marker Choices")
                 marker_color = st.color_picker(f"Marker Color - Chart {i+1}", 
                                                "#0000FF", key=f'marker_color_{i}')
@@ -606,6 +621,7 @@ Ternary_Chart_1
                 marker_size = st.slider(f"Marker Size - Chart {i+1}", 
                                         10, 200, 50, key=f'marker_size{i}')
                 
+                # --- Segment Lines ---
                 st.markdown("### Segment Lines")
                 coord_system = st.selectbox(f"Choose Coordinate System - Chart {i+1}", 
                                         ["Ternary", "Cartesian"], key=f'coord_system_{i}')
@@ -615,6 +631,28 @@ Ternary_Chart_1
                 segment_line_color = st.color_picker(f"Segment Line Color - Chart {i+1}", "#000000", key=f"segment_line_color_{i}")
                 segment_line_width = st.slider(f"Segment Line Width - Chart {i+1}", 0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
+                # --- Segment Labels ---
+                segment_labels = []
+
+                if st.checkbox(f"Add Segment Labels - Chart {i+1}", key=f'segment_labels_toggle_{i}'):
+                    segment_label_input = st.text_area(
+                        f"Segment Labels - Chart {i+1} (format: x,y,label)", 
+                        key=f'segment_label_input_{i}'
+                    )
+    
+                    for row in segment_label_input.strip().splitlines():
+                        parts = row.split(',')
+                        if len(parts) == 3:
+                            try:
+                                x, y = map(float, parts[:2])
+                                label_text = parts[2].strip()
+                                segment_labels.append((x, y, label_text))
+                            except ValueError:
+                                st.warning(f"Invalid format: {row}. Use format: x,y,label")
+                                        
+                    fontsize = st.slider(f"Font Size - Chart {i+1}", 8, 30, 12, key=f"fontsize_{i}")
+                    color = st.color_picker(f"Color - Chart {i+1}", '#FF5733', key=f"label_color_{i}")
+                                
                 chart_settings.append({
                         "col": col,
                         "shift_x": shift_x, "shift_y": shift_y, "angle": angle,
@@ -627,7 +665,11 @@ Ternary_Chart_1
                         "right_label_color": right_label_color, "top_label_color": top_label_color,
                         "edge_color": edge_color, "coord_system": coord_system,
                         "line_segments_input": line_segments_input, "segment_line_color": segment_line_color,
-                        "segment_line_width": segment_line_width
+                        "segment_line_width": segment_line_width,
+                        "cartesian_labels": segment_labels,
+                        "cartesian_label_style": {
+                            "fontsize": fontsize,
+                            "color": color }
                     })
                 
         centers = []
@@ -715,8 +757,11 @@ Ternary_Chart_1
                     left_label_color=settings["left_label_color"],
                     right_label_color=settings["right_label_color"],
                     top_label_color=settings["top_label_color"],
-                    edge_color=settings["edge_color"]
+                    edge_color=settings["edge_color"],
+                    cartesian_labels=settings.get("cartesian_labels", []),
+                    cartesian_label_style=settings.get("cartesian_label_style", {})
                 )
+                
             except ValueError as e:
                 st.warning(f"⚠️ Customization Error: Please change input and try again.")
                 plot_success = False
