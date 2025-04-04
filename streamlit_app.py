@@ -550,6 +550,7 @@ Example:
 Ternary_Chart_1
 
 0.33,0.33,0.34
+
 0.81,0.09,0.10''')
         uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
         
