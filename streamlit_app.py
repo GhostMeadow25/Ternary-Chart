@@ -507,13 +507,16 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
     for start, end in zip(line_starts_transformed, line_ends_transformed):
         ax.plot([start[0], end[0]], [start[1], end[1]], color=segment_line_color, 
                 linewidth=segment_line_width)
-        
-    for x, y, text in cartesian_labels:
-        ax.text(
-            x, y, text,
-            fontsize=cartesian_label_style.get("fontsize", 10),
-            color=cartesian_label_style.get("color", "purple")
-        )
+       
+    if cartesian_labels:
+        coords_only = [(x, y) for x, y, _ in cartesian_labels]
+        transformed_coords_label = transform_coordinates(
+                coords_only, angle, center, shift_x, shift_y, magnifications)
+
+        for (x, y), (_, _, text) in zip(transformed_coords_label, cartesian_labels):
+            ax.text(x, y, text, fontsize=cartesian_label_style.get("fontsize", 10),
+                color=cartesian_label_style.get("color", "purple"),
+                ha='center', va='center')
 
     return scatter_plot
 
@@ -525,7 +528,19 @@ def main():
     st.write('''
 Use this application to create 1-4 ternary charts.  
 :gray[*Please note that this application is a work in progress.*]''')
-    st.write('''
+
+    
+    num_charts = st.slider("Number of Ternary Charts", 1, 4, 1)
+
+    data_choice = st.radio("Select Data Input Method", 
+                           ["Upload CSV File", "Enter Data Manually"])
+
+    df = None
+    charts_data = {}
+    valid_data = True
+
+    if data_choice == "Upload CSV File":
+        st.write('''
 Upload a .csv file with ternery coords.  
 Each column should contain the coords for one ternary chart.  
 Each cell should be in the form: x, y, z, and should add to 1.
@@ -534,33 +549,81 @@ Example:
     
 Ternary_Chart_1
 
-0.33,0.33,0.34''')
-
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-
-    if uploaded_file is not None:
-        st.write("File uploaded...")
+0.33,0.33,0.34
+0.81,0.09,0.10''')
+        uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
         
-        df = pd.read_csv(uploaded_file, skipinitialspace=True)
+        if uploaded_file is not None:
+            st.write("File uploaded...")
+            df = pd.read_csv(uploaded_file, skipinitialspace=True)
+            st.write("Data Preview:", df.head(6))
+        else:
+            st.write("Waiting for file upload...")
+            
+    elif data_choice == "Enter Data Manually":
+        st.write("Enter ternary coordinates manually in the following format:")
+        st.code('data1 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], ...]', language='python')
         
-        st.write("Data Preview:", df.head(6))
+        valid_data = True
+        charts_data = {}
         
-        num_charts = st.slider("Number of Ternary Charts", 1, 4, 1)
-        columns = df.columns.tolist()
+        for i in range(num_charts):
+            st.write(f"### Chart {i + 1} Data")
+        
+            manual_input = st.text_area(f"Enter Data for Chart {i + 1}", height=150)
+            
+            if manual_input.strip():
+                
+                try:
+                    start = manual_input.find('[')
+                    end = manual_input.rfind(']')
+        
+                    if start != -1 and end != -1:
+                        data_str = manual_input[start:end + 1]
+                        chart_data = eval(data_str)
+        
+                        valid_chart = True
+                        for row in chart_data:
+                            if len(row) == 3:
+                                if abs(sum(row) - 1) >= 1e-5:
+                                    st.warning(f"⚠️ Chart {i + 1}: Coordinates {row} do not sum to 1.")
+                                    valid_chart = False
+                            else:
+                                st.error(f"Chart {i + 1}: Invalid row length: {row}")
+                                valid_chart = False
+        
+                        if valid_chart:
+                            st.success(f"Chart {i + 1}: Data parsed successfully!")
+                            charts_data[f"Chart_{i + 1}"] = chart_data
+                        else:
+                            valid_data = False
+                    else:
+                        st.error(f"Chart {i + 1}: Invalid format. Use full Python list syntax.")
+        
+                except Exception as e:
+                    st.error(f"Chart {i + 1}: Error parsing data: {e}")
+                    valid_data = False
+            
+    if df is not None or charts_data:
         fig, ax = plt.subplots(figsize=(8, 8))
-        
         chart_settings = []
-        
         colormap_options = plt.colormaps()
         
         for i in range(num_charts):
+            if df is None and (not charts_data.get(f"Chart_{i + 1}") or len(charts_data.get(f"Chart_{i + 1}")) == 0):
+                st.warning(f"Chart {i + 1}: No valid data; skipping customization options.")
+                continue
+            
             with st.sidebar.expander(f'Customization Options - Chart {i+1}', expanded=(i==0)):
                 
-                # --- Data Choice --- 
                 st.markdown("### Data Choice")
-                col = st.selectbox(f"Select column for chart {i+1}", columns, key=f'col_{i}')
                 
-                # --- Chart Line Choices ---
+                if df is not None:
+                    columns = df.columns.tolist()
+                    col = st.selectbox(f"Select column for chart {i+1}", columns, key=f'col_{i}')
+                else:
+                    col = f"Manual Data {i+1}"
+                    
                 st.markdown("### Chart Line Choices")
                 num_lines = st.selectbox(f"Number of Grid Lines - Chart {i+1}", 
                                      [1, 5, 10], index=2, key=f'num_lines_{i}')
@@ -575,7 +638,6 @@ Ternary_Chart_1
                 edge_color = st.color_picker(f"Edge Color - Chart {i+1}", 
                                                "#008000", key=f'edge_color_{i}')
                 
-                # --- Transformation Choices ---
                 st.markdown("### Transformation Choices")
                 shift_x = st.number_input(f"X Shift - Chart {i+1}", 
                                           value=0, step=1, key=f'shift_x_{i}')
@@ -586,7 +648,6 @@ Ternary_Chart_1
                 magnification = st.selectbox(f"Magnification - Chart {i+1}", 
                             [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], index=3, key=f'magnification{i}')
                 
-                # --- Tick Choices ---
                 left_tick = st.slider(f"Left Tick - Chart {i+1}", min_value=0, 
                         max_value=100, value=0, step=num_lines, key=f'left_tick_{i}')
                 right_tick = st.slider(f"Right Tick - Chart {i+1}", 
@@ -595,7 +656,6 @@ Ternary_Chart_1
                         max_value=100, value=0, step=num_lines, key=f'top_tick_{i}')
                 ticks = [["L", left_tick], ["R", right_tick], ["T", top_tick]]
                 
-                # --- Chart Label Choices ---
                 st.markdown("### Chart Label Choices")
                 labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
                                      value=False, key=f'labels_{i}')
@@ -603,7 +663,6 @@ Ternary_Chart_1
                 right_label_color = st.color_picker(f"Right Label Color - Chart {i+1}", "#0000FF", key=f"right_label_color_{i}")
                 top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#008000", key=f"top_label_color_{i}")
                 
-                # --- Contour Choices ---
                 st.markdown("### Contour Choices")
                 contours = st.checkbox(f"Enable Contours - Chart {i+1}", 
                                        value=False, key=f'contours_{i}')
@@ -612,7 +671,6 @@ Ternary_Chart_1
                 cmap = st.selectbox(f"Colormap - Chart {i+1}", colormap_options, 
                                     index=colormap_options.index("Blues"), key=f'cmap_{i}')
                 
-                # --- Marker Choices ---
                 st.markdown("### Marker Choices")
                 marker_color = st.color_picker(f"Marker Color - Chart {i+1}", 
                                                "#0000FF", key=f'marker_color_{i}')
@@ -621,18 +679,17 @@ Ternary_Chart_1
                 marker_size = st.slider(f"Marker Size - Chart {i+1}", 
                                         10, 200, 50, key=f'marker_size{i}')
                 
-                # --- Segment Lines ---
                 st.markdown("### Segment Lines")
-                coord_system = st.selectbox(f"Choose Coordinate System - Chart {i+1}", 
-                                        ["Ternary", "Cartesian"], key=f'coord_system_{i}')
-                st.write("For Ternary: 0.5,0,0.5 -> 0,0.5,0.5  |  For Cartesian: 50,0 -> 50,86")
+                coord_system = "Cartesian"
+                st.write("Segment Lines will be interpreted as Cartesian coordinates (e.g., 50,0 -> 50,86).")
                 line_segments_input = st.text_area(f"Line Segments - Chart {i+1} (one per line)",
                     key=f'line_segments_input_{i}')
                 segment_line_color = st.color_picker(f"Segment Line Color - Chart {i+1}", "#000000", key=f"segment_line_color_{i}")
                 segment_line_width = st.slider(f"Segment Line Width - Chart {i+1}", 0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
-                # --- Segment Labels ---
                 segment_labels = []
+                fontsize = 12
+                color = '#FF5733'
 
                 if st.checkbox(f"Add Segment Labels - Chart {i+1}", key=f'segment_labels_toggle_{i}'):
                     segment_label_input = st.text_area(
@@ -671,30 +728,45 @@ Ternary_Chart_1
                             "fontsize": fontsize,
                             "color": color }
                     })
-                
-        centers = []
-        
+            
         errors = set()
         
+        if 'centers' not in st.session_state:
+            st.session_state.centers = {}
+        
         for i, settings in enumerate(chart_settings):
-            col_data = df[settings["col"]].dropna().astype(str).tolist()
+            col_data = []
+
+            if df is not None:
+                col_data = df[settings["col"]].dropna().astype(str).tolist()
+            else:
+                col_data = charts_data.get(f"Chart_{i + 1}", [])
+
             new_col_data = []
-            
             for coord in col_data:
                 try:
-                    coord_split = [float(c.strip()) for c in coord.split(',')]
-                    if len(coord_split) == 3:
-                        new_col_data.append(coord_split)
-                        
-                        check_ternary_coords(coord_split)
-                        if abs(sum(coord_split) - 1) > 1e-5:
-                            errors.add(f"⚠️ Error: Ternary coordinates {coord_split} do not sum to 1. Actual sum: {sum(coord_split):.6f}")
-                            
+                    if isinstance(coord, list):
+                        parts = coord
+                    else:
+                        parts = [float(x.strip()) for x in coord.split(',')]
+                    if len(parts) == 3:
+                        new_col_data.append(parts)
+                    else:
+                        st.warning(f"Skipping invalid row (incorrect number of coordinates): {coord}")
                 except ValueError:
-                    st.write(f"Skipping invalid row: {coord}")
-            
-            center = compute_ternary_center(ax, settings["shift_x"], settings["shift_y"])
-            centers.append(center)
+                    st.warning(f"Skipping invalid row (could not convert to float): {coord}")
+                                    
+            if not new_col_data:
+                st.warning(f"Chart {i + 1}: No valid data available, skipping plot.")
+                continue
+                    
+            chart_key = f"chart_{i}_center"
+
+            if chart_key not in st.session_state.centers:
+                center = compute_ternary_center(ax, settings["shift_x"], settings["shift_y"])
+                st.session_state.centers[chart_key] = center
+            else:
+                center = st.session_state.centers[chart_key]
             
             line_starts = []
             line_ends = []
@@ -705,15 +777,7 @@ Ternary_Chart_1
                         start_str = start_str.strip()
                         end_str = end_str.strip()
                         try:
-                            if settings["coord_system"] == "Ternary":
-                                start_vals = [float(x.strip()) for x in start_str.split(',')]
-                                end_vals   = [float(x.strip()) for x in end_str.split(',')]
-                                if len(start_vals) == 3 and len(end_vals) == 3:
-                                    line_starts.append(start_vals)
-                                    line_ends.append(end_vals)
-                                else:
-                                    st.warning(f"Invalid ternary line segment: {row}")
-                            else:
+                            if settings["coord_system"] == "Cartesian":
                                 start_vals = [float(x.strip()) for x in start_str.split(',')]
                                 end_vals   = [float(x.strip()) for x in end_str.split(',')]
                                 if len(start_vals) == 2 and len(end_vals) == 2:
@@ -763,7 +827,7 @@ Ternary_Chart_1
                 )
                 
             except ValueError as e:
-                st.warning(f"⚠️ Customization Error: Please change input and try again.")
+                st.warning(f"⚠️ Customization Error in Chart {i+1}: {e} Please change input and try again.")
                 plot_success = False
 
         if plot_success:
@@ -776,7 +840,7 @@ Ternary_Chart_1
             st.pyplot(fig)
                 
     else:
-        st.write("Waiting for file upload...")
+        st.write("Please upload a CSV file or enter data manually.")
 
 
 if __name__ == "__main__":
