@@ -617,6 +617,7 @@ Ternary_Chart_1
             
             with st.sidebar.expander(f'Customization Options - Chart {i+1}', expanded=(i==0)):
                 
+                # --- Data Choice --- 
                 st.markdown("### Data Choice")
                 
                 if df is not None:
@@ -625,6 +626,7 @@ Ternary_Chart_1
                 else:
                     col = f"Manual Data {i+1}"
                     
+                # --- Chart Line Choices ---
                 st.markdown("### Chart Line Choices")
                 num_lines = st.selectbox(f"Number of Grid Lines - Chart {i+1}", 
                                      [1, 5, 10], index=2, key=f'num_lines_{i}')
@@ -639,6 +641,7 @@ Ternary_Chart_1
                 edge_color = st.color_picker(f"Edge Color - Chart {i+1}", 
                                                "#008000", key=f'edge_color_{i}')
                 
+                # --- Transformation Choices ---
                 st.markdown("### Transformation Choices")
                 shift_x = st.number_input(f"X Shift - Chart {i+1}", 
                                           value=0, step=1, key=f'shift_x_{i}')
@@ -649,6 +652,7 @@ Ternary_Chart_1
                 magnification = st.selectbox(f"Magnification - Chart {i+1}", 
                             [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], index=3, key=f'magnification{i}')
                 
+                # --- Tick Choices ---
                 left_tick = st.slider(f"Left Tick - Chart {i+1}", min_value=0, 
                         max_value=100, value=0, step=num_lines, key=f'left_tick_{i}')
                 right_tick = st.slider(f"Right Tick - Chart {i+1}", 
@@ -657,6 +661,7 @@ Ternary_Chart_1
                         max_value=100, value=0, step=num_lines, key=f'top_tick_{i}')
                 ticks = [["L", left_tick], ["R", right_tick], ["T", top_tick]]
                 
+                # --- Chart Label Choices ---
                 st.markdown("### Chart Label Choices")
                 labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
                                      value=False, key=f'labels_{i}')
@@ -664,6 +669,7 @@ Ternary_Chart_1
                 right_label_color = st.color_picker(f"Right Label Color - Chart {i+1}", "#0000FF", key=f"right_label_color_{i}")
                 top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#008000", key=f"top_label_color_{i}")
                 
+                # --- Contour Choices ---
                 st.markdown("### Contour Choices")
                 contours = st.checkbox(f"Enable Contours - Chart {i+1}", 
                                        value=False, key=f'contours_{i}')
@@ -672,6 +678,7 @@ Ternary_Chart_1
                 cmap = st.selectbox(f"Colormap - Chart {i+1}", colormap_options, 
                                     index=colormap_options.index("Blues"), key=f'cmap_{i}')
                 
+                # --- Marker Choices ---
                 st.markdown("### Marker Choices")
                 marker_color = st.color_picker(f"Marker Color - Chart {i+1}", 
                                                "#0000FF", key=f'marker_color_{i}')
@@ -680,6 +687,7 @@ Ternary_Chart_1
                 marker_size = st.slider(f"Marker Size - Chart {i+1}", 
                                         10, 200, 50, key=f'marker_size{i}')
                 
+                # --- Segment Lines ---
                 st.markdown("### Segment Lines")
                 coord_system = "Cartesian"
                 st.write("Segment Lines will be interpreted as Cartesian coordinates (e.g., 50,0 -> 50,86).")
@@ -688,6 +696,7 @@ Ternary_Chart_1
                 segment_line_color = st.color_picker(f"Segment Line Color - Chart {i+1}", "#000000", key=f"segment_line_color_{i}")
                 segment_line_width = st.slider(f"Segment Line Width - Chart {i+1}", 0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
+                # --- Segment Labels ---
                 segment_labels = []
                 fontsize = 12
                 color = '#FF5733'
@@ -761,7 +770,7 @@ Ternary_Chart_1
                 st.warning(f"Chart {i + 1}: No valid data available, skipping plot.")
                 continue
                     
-            chart_key = f"chart_{i}_center"
+            chart_key = f"chart_{i}_center_{settings['shift_x']}_{settings['shift_y']}"
 
             if chart_key not in st.session_state.centers:
                 center = compute_ternary_center(ax, settings["shift_x"], settings["shift_y"])
@@ -839,6 +848,8 @@ Ternary_Chart_1
             plt.axis('off')
             
             st.pyplot(fig)
+        
+        plt.axis('off')
                 
     else:
         st.write("Please upload a CSV file or enter data manually.")
