@@ -563,7 +563,7 @@ Ternary_Chart_1
             
     elif data_choice == "Enter Data Manually":
         st.write("Enter ternary coordinates manually in the following format:")
-        st.code('[[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], ...]', language='python')
+        st.code('data1 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], ...]', language='python')
         
         valid_data = True
         charts_data = {}
