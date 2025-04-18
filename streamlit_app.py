@@ -8,6 +8,7 @@ import math as ma, matplotlib.pyplot as plt, numpy as np
 from matplotlib.transforms import TransformedPath
 from matplotlib.path import Path
 import streamlit as st, pandas as pd
+from scipy.ndimage import gaussian_filter
 
 def Tlines(ax, i, verc, cc, lw, angle=0, center=(0,0), shift_x=0, shift_y=0, magnifications=1):
     """
@@ -387,7 +388,6 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
    
         density, x_edges, y_edges = np.histogram2d(x, y, bins=[bins_x, bins_y])
    
-        from scipy.ndimage import gaussian_filter
         smoothed_density = gaussian_filter(density, sigma=8)
    
         density_max = smoothed_density.max()
