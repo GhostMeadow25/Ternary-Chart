@@ -423,9 +423,9 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
         )
 
     if seg_labels:
-        for lbl, lbl_coords in seg_labels:
+        for lbl, lbl_coords, lbl_color in seg_labels:
             x, y = lbl_coords
-            ax.text(x, y, lbl, fontsize=12, ha='center', va='center', color='black')
+            ax.text(x, y, lbl, fontsize=12, ha='center', va='center', color=lbl_color)
        
     if labels:
         
@@ -704,7 +704,7 @@ Ternary_Chart_1
 
                 if st.checkbox(f"Add Segment Labels - Chart {i+1}", key=f'segment_labels_toggle_{i}'):
                     segment_label_input = st.text_area(
-                        f"Segment Labels - Chart {i+1} (format: x,y,label)", 
+                        f"Segment Labels - Chart {i+1} (format: x,y,label[,color])",
                         key=f'segment_label_input_{i}'
                     )
     
@@ -714,12 +714,12 @@ Ternary_Chart_1
                             try:
                                 x, y = map(float, parts[:2])
                                 label_text = parts[2].strip()
-                                segment_labels.append((x, y, label_text))
+                                label_color = parts[3].strip() if len(parts) == 4 else color
+                                segment_labels.append((x, y, label_text, label_color))
                             except ValueError:
-                                st.warning(f"Invalid format: {row}. Use format: x,y,label")
+                                st.warning(f"Invalid format: {row}. Use format: x,y,label[,color]")
                                         
                     fontsize = st.slider(f"Font Size - Chart {i+1}", 8, 30, 12, key=f"fontsize_{i}")
-                    color = st.color_picker(f"Color - Chart {i+1}", '#FF5733', key=f"label_color_{i}")
                                 
                 chart_settings.append({
                         "col": col,
