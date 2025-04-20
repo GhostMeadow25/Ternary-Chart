@@ -854,6 +854,7 @@ Ternary_Chart_1
     else:
         st.write("Please upload a CSV file or enter data manually.")
 
+    plt.axis('off')
 
 if __name__ == "__main__":
     main()
