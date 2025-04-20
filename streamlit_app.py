@@ -421,11 +421,6 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
             label=label, 
             s=data_marker_size
         )
-
-    if seg_labels:
-        for lbl, lbl_coords, lbl_color in seg_labels:
-            x, y = lbl_coords
-            ax.text(x, y, lbl, fontsize=12, ha='center', va='center', color=lbl_color)
        
     if labels:
         
@@ -509,13 +504,14 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                 linewidth=segment_line_width)
        
     if cartesian_labels:
-        for x, y, txt, col in cartesian_labels:
+        coords = [(xx, yy) for xx, yy, _, _ in cartesian_labels]
+        transformed = transform_coordinates(coords, angle, center, shift_x, shift_y, magnifications)
+        for (x, y), (_, _, txt, lbl_color) in zip(transformed, cartesian_labels):
             ax.text(
                 x, y, txt,
                 fontsize=cartesian_label_style.get("fontsize", 10),
-                color=col,
-                ha="center", va="center"
-            )
+                color=lbl_color,
+                ha='center', va='center')
 
     return scatter_plot
 
@@ -713,11 +709,9 @@ Ternary_Chart_1
                     with c3:
                         y = st.number_input(f"Y#{j+1}", key=f"y_{i}_{j}", format="%.2f")
                     with c4:
-                        color = st.color_picker(f"Color#{j+1}", key=f"color_{i}_{j}")
+                        lbl_color = st.color_picker(f"Color#{j+1}", key=f"color_{i}_{j}")
                     if text:
-                        seg_labels.append((x, y, text, color))
-
-                settings["cartesian_labels"] = seg_labels
+                        segment_labels.append((x, y, text, lbl_color))
                                 
                 chart_settings.append({
                         "col": col,
@@ -732,10 +726,7 @@ Ternary_Chart_1
                         "edge_color": edge_color, "coord_system": coord_system,
                         "line_segments_input": line_segments_input, "segment_line_color": segment_line_color,
                         "segment_line_width": segment_line_width,
-                        "cartesian_labels": segment_labels,
-                        "cartesian_label_style": {
-                            "fontsize": fontsize,
-                            "color": color }
+                        "cartesian_labels": segment_labels
                     })
             
         errors = set()
