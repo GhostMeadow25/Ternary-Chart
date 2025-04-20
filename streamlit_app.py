@@ -613,14 +613,17 @@ Ternary_Chart_1
             
             with st.sidebar.expander(f'Customization Options - Chart {i+1}', expanded=(i==0)):
                 
-                # --- Data Choice --- 
-                st.markdown("### Data Choice")
+                # --- Plot Choice --- 
+                st.markdown("### Plot Choices")
                 
                 if df is not None:
                     columns = df.columns.tolist()
                     col = st.selectbox(f"Select column for chart {i+1}", columns, key=f'col_{i}')
                 else:
                     col = f"Manual Data {i+1}"
+
+                show_legend = st.checkbox("Show legend", value=True, key=f"show_legend_{i}")
+                show_title  = st.checkbox("Show chart title", value=True, key=f"show_title_{i}")
                     
                 # --- Chart Line Choices ---
                 st.markdown("### Chart Line Choices")
@@ -832,11 +835,18 @@ Ternary_Chart_1
 
         if plot_success:
             ax.set_aspect('equal')
-            ax.legend()
-            ax.set_title("Ternary Plot(s)")
+            if show_legend:
+                ax.legend()
+            else:
+                leg = ax.get_legend()
+                if leg:
+                    leg.remove()
+            if show_title:
+                ax.set_title("Ternary Plot(s)")
+            else:
+                ax.set_title("")
             plt.tight_layout()
             plt.axis('off')
-            
             ax.set_axis_off()
             st.pyplot(fig)
                 
