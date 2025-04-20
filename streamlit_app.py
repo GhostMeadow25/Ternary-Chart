@@ -607,6 +607,7 @@ Ternary_Chart_1
             
     if df is not None or charts_data:
         fig, ax = plt.subplots(figsize=(8, 8))
+        ax.axis('off')
         chart_settings = []
         colormap_options = plt.colormaps()
         
@@ -847,14 +848,11 @@ Ternary_Chart_1
             plt.tight_layout()
             plt.axis('off')
             
+            ax.set_axis_off()
             st.pyplot(fig)
-        
-        plt.axis('off')
                 
     else:
         st.write("Please upload a CSV file or enter data manually.")
-
-    plt.axis('off')
 
 if __name__ == "__main__":
     main()
