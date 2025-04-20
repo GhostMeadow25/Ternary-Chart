@@ -509,7 +509,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
         for (x, y), (_, _, txt, lbl_color) in zip(transformed, cartesian_labels):
             ax.text(
                 x, y, txt,
-                fontsize=cartesian_label_style.get("fontsize", 10),
+                fontsize=cartesian_label_style.get("fontsize", 12),
                 color=lbl_color,
                 ha='center', va='center')
 
