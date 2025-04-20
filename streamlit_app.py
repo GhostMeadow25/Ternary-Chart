@@ -664,7 +664,7 @@ Ternary_Chart_1
                 st.markdown("### Chart Label Choices")
                 labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
                                      value=False, key=f'labels_{i}')
-                left_label_color = st.color_picker(f"Bottom Label Color - Chart {i+1}", "##0000FF", key=f"left_label_color_{i}")
+                left_label_color = st.color_picker(f"Bottom Label Color - Chart {i+1}", "#0000FF", key=f"left_label_color_{i}")
                 right_label_color = st.color_picker(f"Right Label Color - Chart {i+1}", "#008000", key=f"right_label_color_{i}")
                 top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#FF0000", key=f"top_label_color_{i}")
                 
