@@ -509,14 +509,13 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                 linewidth=segment_line_width)
        
     if cartesian_labels:
-        coords_only = [(x, y) for x, y, _ in cartesian_labels]
-        transformed_coords_label = transform_coordinates(
-                coords_only, angle, center, shift_x, shift_y, magnifications)
-
-        for (x, y), (_, _, text) in zip(transformed_coords_label, cartesian_labels):
-            ax.text(x, y, text, fontsize=cartesian_label_style.get("fontsize", 10),
-                color=cartesian_label_style.get("color", "purple"),
-                ha='center', va='center')
+        for x, y, txt, col in cartesian_labels:
+            ax.text(
+                x, y, txt,
+                fontsize=cartesian_label_style.get("fontsize", 10),
+                color=col,
+                ha="center", va="center"
+            )
 
     return scatter_plot
 
@@ -698,28 +697,27 @@ Ternary_Chart_1
                 segment_line_width = st.slider(f"Segment Line Width - Chart {i+1}", 0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
                 # --- Segment Labels ---
+                st.markdown("### Segment Labels")
+                num_seg_labels = st.number_input(
+                    f"How many segment labels for Chart {i+1}?", 
+                    min_value=0, max_value=10, value=0, step=1, key=f"nlabels_{i}")
+                
                 segment_labels = []
-                fontsize = 12
-                color = '#FF5733'
 
-                if st.checkbox(f"Add Segment Labels - Chart {i+1}", key=f'segment_labels_toggle_{i}'):
-                    segment_label_input = st.text_area(
-                        f"Segment Labels - Chart {i+1} (format: x,y,label[,color])",
-                        key=f'segment_label_input_{i}'
-                    )
-    
-                    for row in segment_label_input.strip().splitlines():
-                        parts = row.split(',')
-                        if len(parts) == 3:
-                            try:
-                                x, y = map(float, parts[:2])
-                                label_text = parts[2].strip()
-                                label_color = parts[3].strip() if len(parts) == 4 else color
-                                segment_labels.append((x, y, label_text, label_color))
-                            except ValueError:
-                                st.warning(f"Invalid format: {row}. Use format: x,y,label[,color]")
-                                        
-                    fontsize = st.slider(f"Font Size - Chart {i+1}", 8, 30, 12, key=f"fontsize_{i}")
+                for j in range(num_seg_labels):
+                    c1, c2, c3, c4 = st.columns([2,1,1,1])
+                    with c1:
+                        text = st.text_input(f"Label text #{j+1}", key=f"text_{i}_{j}")
+                    with c2:
+                        x = st.number_input(f"X#{j+1}", key=f"x_{i}_{j}", format="%.2f")
+                    with c3:
+                        y = st.number_input(f"Y#{j+1}", key=f"y_{i}_{j}", format="%.2f")
+                    with c4:
+                        color = st.color_picker(f"Color#{j+1}", key=f"color_{i}_{j}")
+                    if text:
+                        seg_labels.append((x, y, text, color))
+
+                settings["cartesian_labels"] = seg_labels
                                 
                 chart_settings.append({
                         "col": col,
