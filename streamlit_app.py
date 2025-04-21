@@ -638,7 +638,7 @@ Ternary_Chart_1
                 line_color_3 = st.color_picker(f"Grid Line Color 3 - Chart {i+1}", 
                                                "#008000", key=f'lc3_{i}')
                 edge_color = st.color_picker(f"Edge Color - Chart {i+1}", 
-                                               "#008000", key=f'edge_color_{i}')
+                                               "#0000FF", key=f'edge_color_{i}')
                 
                 # --- Transformation Choices ---
                 st.markdown("### Transformation Choices")
