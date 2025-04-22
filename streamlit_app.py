@@ -626,7 +626,7 @@ Ternary_Chart_1
                 show_title  = st.checkbox("Show chart title", value=True, key=f"show_title_{i}")
                     
                 # --- Chart Line Choices ---
-                st.markdown("### Chart Line Choices")
+                st.markdown("### Chart Lines")
                 num_lines = st.selectbox(f"Number of Grid Lines - Chart {i+1}", 
                                      [1, 5, 10], index=2, key=f'num_lines_{i}')
                 line_width = st.slider(f"Grid Line Width - Chart {i+1}", 
@@ -641,7 +641,7 @@ Ternary_Chart_1
                                                "#0000FF", key=f'edge_color_{i}')
                 
                 # --- Transformation Choices ---
-                st.markdown("### Transformation Choices")
+                st.markdown("### Transformations")
                 shift_x = st.number_input(f"X Shift - Chart {i+1}", 
                                           value=0, step=1, key=f'shift_x_{i}')
                 shift_y = st.number_input(f"Y Shift - Chart {i+1}", 
@@ -661,7 +661,7 @@ Ternary_Chart_1
                 ticks = [["L", left_tick], ["R", right_tick], ["T", top_tick]]
                 
                 # --- Chart Label Choices ---
-                st.markdown("### Chart Label Choices")
+                st.markdown("### Chart Labels")
                 labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
                                      value=False, key=f'labels_{i}')
                 left_label_color = st.color_picker(f"Bottom Label Color - Chart {i+1}", "#0000FF", key=f"left_label_color_{i}")
@@ -669,7 +669,7 @@ Ternary_Chart_1
                 top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#FF0000", key=f"top_label_color_{i}")
                 
                 # --- Contour Choices ---
-                st.markdown("### Contour Choices")
+                st.markdown("### Contours")
                 contours = st.checkbox(f"Enable Contours - Chart {i+1}", 
                                        value=False, key=f'contours_{i}')
                 contour_levels = st.number_input(f"Contour Levels - Chart {i+1}",
@@ -678,7 +678,7 @@ Ternary_Chart_1
                                     index=colormap_options.index("Blues"), key=f'cmap_{i}')
                 
                 # --- Marker Choices ---
-                st.markdown("### Marker Choices")
+                st.markdown("### Markers")
                 marker_color = st.color_picker(f"Marker Color - Chart {i+1}", 
                                                "#0000FF", key=f'marker_color_{i}')
                 marker_style = st.selectbox(f"Marker Style - Chart {i+1}", 
