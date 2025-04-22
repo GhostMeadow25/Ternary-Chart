@@ -849,7 +849,18 @@ Ternary_Chart_1
             plt.axis('off')
             ax.set_axis_off()
             st.pyplot(fig)
+
+            if st.button("Export Image"):
+                fig.savefig("ternary_charts_export.png", dpi=300, bbox_inches='tight')
+                st.success("Plot saved as 'ternary_charts_export.png'")
                 
+                with open("ternary_plot_export.png", "rb") as f:
+                    st.download_button(
+                        label="Download Image",
+                        data=f,
+                        file_name="ternary_charts_export.png",
+                        mime="image/png")
+                    
     else:
         st.write("Please upload a CSV file or enter data manually.")
 
