@@ -7,7 +7,7 @@ The program was written by EK Esawi & Lily J. Meadow.
 import math as ma, matplotlib.pyplot as plt, numpy as np
 from matplotlib.transforms import TransformedPath
 from matplotlib.path import Path
-import streamlit as st, pandas as pd,
+import streamlit as st, pandas as pd
 from scipy.ndimage import gaussian_filter
 import io
 
