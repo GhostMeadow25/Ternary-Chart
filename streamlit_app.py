@@ -7,8 +7,9 @@ The program was written by EK Esawi & Lily J. Meadow.
 import math as ma, matplotlib.pyplot as plt, numpy as np
 from matplotlib.transforms import TransformedPath
 from matplotlib.path import Path
-import streamlit as st, pandas as pd
+import streamlit as st, pandas as pd,
 from scipy.ndimage import gaussian_filter
+import io
 
 def Tlines(ax, i, verc, cc, lw, angle=0, center=(0,0), shift_x=0, shift_y=0, magnifications=1):
     """
@@ -851,15 +852,17 @@ Ternary_Chart_1
             st.pyplot(fig)
 
             if st.button("Export Image"):
-                fig.savefig("ternary_charts_export.png", dpi=300, bbox_inches='tight')
-                st.success("Plot saved as 'ternary_charts_export.png'")
-                
-                with open("ternary_charts_export.png", "rb") as f:
-                    st.download_button(
-                        label="Download Image",
-                        data=f,
-                        file_name="ternary_charts_export.png",
-                        mime="image/png")
+                img_bytes = io.BytesIO()
+                fig.savefig(img_bytes, format="png", dpi=300, bbox_inches="tight")
+                img_bytes.seek(0)
+            
+                st.download_button(
+                    label="Download Image",
+                    data=img_bytes,
+                    file_name="ternary_charts_export.png",
+                    mime="image/png"
+                )
+                st.success("Plot is ready for download.")
                     
     else:
         st.write("Please upload a CSV file or enter data manually.")
