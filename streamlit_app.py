@@ -854,7 +854,7 @@ Ternary_Chart_1
                 fig.savefig("ternary_charts_export.png", dpi=300, bbox_inches='tight')
                 st.success("Plot saved as 'ternary_charts_export.png'")
                 
-                with open("ternary_plot_export.png", "rb") as f:
+                with open("ternary_charts_export.png", "rb") as f:
                     st.download_button(
                         label="Download Image",
                         data=f,
