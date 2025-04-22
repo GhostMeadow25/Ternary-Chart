@@ -862,7 +862,7 @@ Ternary_Chart_1
                     file_name="ternary_charts_export.png",
                     mime="image/png"
                 )
-                st.success("Plot is ready for download.")
+                st.success("Plot is ready for download. Select the Download Image button to continue.")
                     
     else:
         st.write("Please upload a CSV file or enter data manually.")
