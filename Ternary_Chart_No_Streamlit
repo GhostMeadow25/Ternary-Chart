@@ -1,0 +1,637 @@
+import math as ma, matplotlib.pyplot as plt, numpy as np
+from matplotlib.transforms import TransformedPath
+from matplotlib.path import Path
+
+def Tlines(ax, i, verc, cc, lw, angle, center, shift_x=0, shift_y=0, magnifications=1):
+    """
+    Draws ternary lines on a ternary plot based on specified parameters.
+
+    Parameters:
+    ax: The Matplotlib axis object
+    i: Amount of lines
+    verc: Cuts
+    cc: Colors for the lines
+    lw: Line widths for the lines
+    angle: Rotation angle in degrees
+    center: Center point around which to rotate
+    shift_x: Shift along the x direction
+    shift_y: Shift along the y direction
+
+    Returns:
+    Labels for left, right, and top lines.
+    """
+    cval = [k[0] for k in verc]
+    lval = [k[1] for k in verc]
+
+    LS = [[100 - i, i, 0] for i in range(0, 100 + i, i)]
+    RS = [[0, i, 100 - i] for i in range(0, 100 + i, i)]
+    TS = [[i, 0, 100 - i] for i in range(0, 100 + i, i)]
+   
+    if cval[0] == "L":
+        left_list1 = LS
+        left_list2 = list(reversed(TS))
+       
+        if lval[0] > 0 and lval[0] in [k[1] for k in left_list1]:
+            left_index = [k[1] for k in left_list1].index(lval[0])
+            left_list1 = left_list1[left_index:]
+            left_list2 = left_list2[left_index:]
+       
+        if cval[1] == "R" and lval[1] > 0:
+            aa = [j[0] for j in left_list2].index(lval[1])
+            for k in range(aa, len(left_list2)):
+                left_list1[k][1] = left_list1[aa][1]
+                left_list1[k][2] = 100 - sum(left_list1[k])
+       
+        if cval[2] == "T" and lval[2] > 0:
+            bb = [j[0] for j in left_list2].index(lval[2])
+            for m in range(bb, len(left_list2)):
+                left_list2[m][2] = left_list2[bb][2]
+                left_list2[m][1] = 100 - sum(left_list2[m])
+       
+        t2 = [x for pair in list(zip(left_list1, left_list2)) for x in pair]
+
+        transformed_t2 = transform_coordinates(TtB(t2), angle, center,
+                                               shift_x, shift_y, magnifications)
+        Tplot(ax, transformed_t2, "dcl", cc[0], lw[0])
+        ltlabs = [k[0] for k in left_list1 if k[0] >= lval[1]]
+
+    if cval[1] == "R":
+        right_list1 = list(reversed(LS))
+        right_list2 = list(reversed(RS))
+       
+        if lval[1] > 0:
+            right_list1 = right_list1[[k[0] for k in right_list1].index(lval[1]):]
+            right_list2 = right_list2[[k[2] for k in right_list2].index(lval[1]):]
+
+        if cval[0] == "L" and lval[0] > 0:
+            aa = [j[1] for j in right_list1].index(lval[0])
+            for k in range(aa, len(right_list1)):
+                right_list1[k][0] = right_list1[aa][0]
+                right_list1[k][2] = 100 - sum(right_list1[k])
+
+        if cval[2] == "T" and lval[2] > 0:
+            bb = [j[1] for j in right_list2].index(lval[2])
+            for m in range(bb, len(right_list2)):
+                right_list2[m][2] = right_list2[bb][2]
+                right_list2[m][0] = 100 - sum(right_list2[m])
+       
+        t2 = [x for pair in list(zip(right_list1, right_list2)) for x in pair]
+
+        transformed_t2 = transform_coordinates(TtB(t2), angle, center,
+                                               shift_x, shift_y, magnifications)
+        Tplot(ax, transformed_t2, "dcl", cc[1], lw[1])
+        rtlabs = [k[1] for k in right_list1 if k[1] >= lval[2]]
+
+    if cval[2] == "T":
+        top_list1 = TS
+        top_list2 = RS
+
+        if cval[0] == "L" and lval[0] > 0:
+            aa = [j[2] for j in top_list1].index(lval[0])
+            for k in range(aa, len(top_list1)):
+                top_list1[k][0] = top_list1[aa][0]
+                top_list1[k][1] = 100 - sum(top_list1[k])
+       
+        if cval[1] == "R" and lval[1] > 0:
+            bb = [j[2] for j in top_list2].index(lval[1])
+            for m in range(bb, len(top_list2)):
+                top_list2[m][1] = top_list2[bb][1]
+                top_list2[m][0] = 100 - sum(top_list2[m])
+       
+        t2 = [x for pair in list(zip(top_list1, top_list2)) for x in pair]
+
+        transformed_t2 = transform_coordinates(TtB(t2), angle, center,
+                                               shift_x, shift_y, magnifications)
+        Tplot(ax, transformed_t2, "dcl", cc[2], lw[2])
+        ttlabs = [k[2] for k in top_list1 if k[2] >= lval[0]]
+
+    return (ltlabs, rtlabs, ttlabs), (LS, RS, TS)
+
+#============================================================================  
+
+def TtB(tcords):
+    """
+    Converts ternary coordinates to Cartesian coordinates.
+
+    Parameters:
+    tcords: List of ternary coordinates
+
+    Returns:
+    List of Cartesian coordinates
+    """
+    tcords = [[100 * x / sum(j) for x in j] for j in tcords if sum(j) != 0]
+
+    for i in range(len(tcords)):
+       if len(tcords[0])!=3:
+          print("OPS there must be 3 coordinates")
+          exit()
+         
+       ycords=[tcords[i][2]*ma.cos(ma.radians(30)) for i in range(len(tcords))]
+       xcords=[tcords[i][1]+ycords[i]*ma.tan(ma.radians(30)) for i in range(len(tcords))]
+       res=list(map(list, zip(xcords,ycords)))
+
+    return (res)
+
+#============================================================================
+
+def edgs(ax, cuts, angle, center, shift_x=0, shift_y=0, magnifications=1):
+    """
+    Draws edges on the ternary plot based on cut values.
+
+    Parameters:
+    cuts: List of cut values for each side of the ternary plot
+    angle: Rotation angle in degrees
+    center: Center point around which to rotate
+    """
+   
+    cuts = [k[1] for k in cuts]
+    nedgs = []
+
+    if cuts[0] > 0:
+        nedgs.append([100 - cuts[0], 0, cuts[0]])
+        nedgs.append([100 - cuts[0], cuts[0], 0])
+    else:
+        nedgs.append([100, 0, 0])
+
+    if cuts[1] > 0:
+        nedgs.append([cuts[1], 100 - cuts[1], 0])
+        nedgs.append([0, 100 - cuts[1], cuts[1]])
+    else:
+        nedgs.append([0, 100, 0])
+
+    if cuts[2] > 0:
+        nedgs.append([0, cuts[2], 100 - cuts[2]])
+        nedgs.append([cuts[2], 0, 100 - cuts[2]])
+        nedgs.append(nedgs[0])
+    else:
+        nedgs.append([0, 0, 100])
+        nedgs.append(nedgs[0])
+       
+    transformed_nedgs = transform_coordinates(TtB(nedgs), angle, center,
+                                              shift_x, shift_y, magnifications)
+    Tplot(ax, transformed_nedgs, "", "blue", 0.8)
+       
+    return transformed_nedgs
+   
+#============================================================================
+
+def Tplot(ax, cords, optn, cc, lw):
+    """
+    Plots coordinates on the ternary plot
+
+    Parameters:
+        ax: The Matplotlib axis object
+        cords: List of Cartesian coordinates
+        optn: Plotting option (e.g., "dcl")
+        cc: Color
+        lw: Line width
+    """
+
+    if optn == "dcl":
+        cords = sum([[cords[j], cords[j + 1],
+                [float('nan'),
+                 float('nan')]] for j in range(len(cords) - 1) if j % 2 == 0],
+                [])[:-1]
+
+    xax=list(zip(*cords))[0]
+    yax=list(zip(*cords))[1]
+
+    ax.plot(xax, yax, cc, lw=lw)
+   
+#============================================================================
+
+def points_in_ternary(vertices, points):
+    """
+    Check if points are inside the ternary plot defined by the vertices.
+
+    Parameters:
+    vertices (list of tuples): List of (x, y) coordinates defining the polygon vertices.
+    points (list of tuples): List of (x, y) coordinates of the points to check.
+
+    Returns:
+    list of bool: A list indicating whether each point is inside (True) or outside (False) the polygon.
+    """
+   
+    path = Path(vertices)
+   
+    points_array = np.array(points)
+   
+    inside = path.contains_points(points_array)
+   
+    return inside.tolist()
+
+#============================================================================        
+
+def check_ternary_coords(coords, tolerance=1e-5):
+    if abs(sum(coords) - 1) > tolerance:
+        print(f"Error: Ternary coordinates {coords} do not sum to 1. Actual sum: {sum(coords)}")
+    return coords
+
+#============================================================================        
+
+def compute_ternary_center(ax, shift_x=0, shift_y=0):
+    """
+    Computes the centroid of the ternary plot and plots it.
+
+    Parameters:
+    ax: The Matplotlib axis object
+    shift_x: Shift along the x direction
+    shift_y: Shift along the y direction
+
+    Returns:
+    The centroid in Cartesian coordinates.
+    """
+   
+    center_ternary_initial = [(1/3)*100, (1/3)*100, (1/3)*100]
+       
+    center_cartesian = TtB([center_ternary_initial])[0]
+   
+    center_cartesian[0] += shift_x
+    center_cartesian[1] += shift_y
+   
+    return center_cartesian
+
+#============================================================================
+
+def transform_coordinates(coords, angle=0, center=(0,0), shift_x=0, shift_y=0,
+                          magnifications=1):
+    """
+    Rotate and shift coordinates around a center.
+   
+    Parameters:
+    coords: List of Cartesian coordinates
+    angle: Rotation angle in degrees (default 0)
+    center: Center point around which to rotate (default (0, 0))
+    shift_x: Shift along the x direction (default 0)
+    shift_y: Shift along the y direction (default 0)
+   
+    Returns:
+    Transformed coordinates.
+    """
+   
+    coords = np.array(coords, dtype=float)
+
+    coords[:, 0] += shift_x
+    coords[:, 1] += shift_y
+   
+    center_shifted = np.array(center, dtype=float)
+    coords -= center_shifted
+    coords *= magnifications
+    coords += center_shifted
+
+    if angle != 0:
+        theta = ma.radians(angle)
+       
+        rotation_matrix = np.array([
+            [ma.cos(theta), -ma.sin(theta)],
+            [ma.sin(theta), ma.cos(theta)]
+        ])
+        coords[:, :2] -= center_shifted.astype(coords.dtype)
+        coords[:, :2] = np.dot(coords[:, :2], rotation_matrix.T)
+        coords[:, :2] += center_shifted
+
+    return coords
+
+#============================================================================  
+
+def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0, center=[0,0], magnifications=1,
+               ticks=[["L",0],["R",0],["T",0]], colors=["red", "blue", "green"], linews=[.8, .8, .8], 
+               line_starts=[], line_ends=[], seg_labels=[], shift_x=0,
+               shift_y=0, num_lines=10, labels=False, contours=False,
+               contour_levels=10, data_marker_size=50, cmap='viridis',
+               segment_line_colors='black'):
+    """
+    Plot a single ternary plot on the axis.
+
+    Parameters:
+    ax: The Matplotlib axis object
+    data: The data coordinates
+    color: Color of the data point markers
+    marker: Marker symbol of the data point
+    label: Label name for the plot
+    angle: Rotation angle in degrees
+    center: Center point around which to rotate
+    ticks: Cuts for left, right, and center
+    colors: Ternary plot line colors
+    linews: Line width
+    shift_x = Shift along the x direction
+    shift_y: Shift along the y direction
+    num_lines: Amount of lines in the plot
+    labels: Choice if there are labels
+    contours: Choice if there is contouring
+    """
+
+    while len(linews) < 3:
+        linews.append(linews[-1])
+
+    tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center, shift_x, shift_y, magnifications)
+    
+    edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
+    
+    cart_coords = np.array(TtB(data))
+    
+    transformed_coords = transform_coordinates(cart_coords, angle, center, shift_x, shift_y, magnifications)
+   
+    ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
+    
+    point_verification = points_in_ternary(ternary_vertices, transformed_coords)
+    
+    if False in point_verification:
+        print("Point(s) outside of plot. Please check data.")
+   
+    if contours:
+        valid_coords = transformed_coords[point_verification]
+        
+        x = valid_coords[:, 0]
+        y = valid_coords[:, 1]
+   
+        x_min, x_max = ternary_vertices[:, 0].min(), ternary_vertices[:, 0].max()
+        y_min, y_max = ternary_vertices[:, 1].min(), ternary_vertices[:, 1].max()
+   
+        high_res = 150
+        bins_x = np.linspace(x_min, x_max, high_res)
+        bins_y = np.linspace(y_min, y_max, high_res)
+   
+        density, x_edges, y_edges = np.histogram2d(x, y, bins=[bins_x, bins_y])
+   
+        from scipy.ndimage import gaussian_filter
+        smoothed_density = gaussian_filter(density, sigma=8)
+   
+        density_max = smoothed_density.max()
+        smoothed_density /= density_max
+   
+        grid_x, grid_y = np.meshgrid(
+            0.5 * (x_edges[:-1] + x_edges[1:]),
+            0.5 * (y_edges[:-1] + y_edges[1:])
+        )
+   
+        levels = np.linspace(0, 1, contour_levels - 3)
+   
+        contour = ax.contourf(grid_x, grid_y, smoothed_density.T, levels=levels, cmap=cmap)
+
+        triangle_path = Path(ternary_vertices)
+        transformed_triangle_path = TransformedPath(triangle_path, ax.transData)
+   
+        contour.set_clip_path(transformed_triangle_path, transform=ax.transData)
+   
+        cbar = plt.colorbar(contour, ax=ax, orientation='vertical', pad=0.05)
+        cbar.set_label("Density")
+
+    scatter_plot = None
+    
+    if not contours:    
+        scatter_plot = ax.scatter(
+            transformed_coords[:, 0], 
+            transformed_coords[:, 1],
+            c=[color] * len(transformed_coords),
+            marker=marker, 
+            label=label, 
+            s=data_marker_size
+        )
+
+    if seg_labels:
+        for lbl, lbl_coords in seg_labels:
+            x, y = lbl_coords
+            ax.text(x, y, lbl, fontsize=12, ha='center', va='center', color='black')
+       
+    if labels:
+        
+        ltlines, rtlines, ttlines = tlines_output[0]
+        LS, RS, TS = tlines_output[1]
+           
+        LS_cart = [transform_coordinates(TtB([ls]), angle, center,
+                                               shift_x, shift_y, magnifications  )[0] for ls in LS]
+        RS_cart = [transform_coordinates(TtB([rs]), angle, center,
+                                               shift_x, shift_y, magnifications  )[0] for rs in RS]
+        TS_cart = [transform_coordinates(TtB([ts]), angle, center,
+                                               shift_x, shift_y, magnifications  )[0] for ts in TS]
+       
+        tick_interval = num_lines
+        
+        left_labels = list(range(0, 101, tick_interval))
+        right_labels = list(reversed(list(range(0, 101, tick_interval))))
+        top_labels = list(range(0, 101, tick_interval))
+       
+        remove_left = int((ticks[0][1])/tick_interval)
+        remove_right = int((ticks[1][1])/tick_interval)
+        remove_top = int((ticks[2][1])/tick_interval)
+       
+        if remove_left != 0:
+            LS_cart = LS_cart[remove_left:]
+            left_labels = left_labels[remove_left:]
+            TS_cart = TS_cart[:len(LS_cart)]
+            top_labels = top_labels[:len(LS_cart)]
+           
+        if remove_right != 0:
+            RS_cart = RS_cart[:-remove_right]
+            right_labels = right_labels[:-remove_right]
+            LS_cart = LS_cart[:-remove_right]
+            left_labels = left_labels[:-remove_right]
+           
+        if remove_top != 0:
+            TS_cart = TS_cart[remove_top:]
+            top_labels = top_labels[remove_top:]
+            RS_cart = RS_cart[remove_top:]
+            right_labels = right_labels[remove_top:]
+       
+        for (x, y), label in zip(LS_cart, left_labels):
+            ax.text(x, y, label, color='red', fontsize=12 * magnifications, ha='right', va='top')
+
+        for (x, y), label in zip(RS_cart, right_labels):
+            ax.text(x, y, label, color='blue', fontsize=12 * magnifications, ha='left', va='center')
+
+        for (x, y), label in zip(TS_cart, top_labels):
+            ax.text(x, y, label, color='green', fontsize=12 * magnifications, ha='right', va='bottom')
+        
+    line_starts_transformed = transform_coordinates(line_starts, angle, center, shift_x, shift_y, magnifications)
+    line_ends_transformed = transform_coordinates(line_ends, angle, center, shift_x, shift_y, magnifications)
+   
+    for start, end in zip(line_starts_transformed, line_ends_transformed):
+        ax.plot([start[0], end[0]], [start[1], end[1]], color= segment_line_colors)
+
+    return scatter_plot
+
+#============================================================================
+
+def main():
+   
+    fig, ax = plt.subplots(figsize=(8, 8))
+   
+    #    **Input data**
+    data1 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], [0.34, 0.33, 0.33],
+            [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], [0.33, 0.36, 0.31], [0.50, 0.25, 0.25],
+            [0.52, 0.26, 0.22], [0.48, 0.27, 0.25], [0.51, 0.24, 0.25], [0.61, 0.19, 0.20],
+            [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17], [0.42, 0.31, 0.27],
+            [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14], [0.71, 0.13, 0.16],
+            [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], [0.31, 0.38, 0.31],
+            [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24], [0.47, 0.29, 0.24],
+            [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18], [0.53, 0.32, 0.15],
+            [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33], [0.22, 0.48, 0.30],
+            [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10], [0.59, 0.23, 0.18],
+            [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
+            [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
+            [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
+   
+    data2 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23], [0.38, 0.07, 0.55],
+             [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35], [0.16, 0.44, 0.40],
+             [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37], [0.15, 0.63, 0.22],
+             [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12], [0.41, 0.49, 0.10],
+             [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16], [0.19, 0.42, 0.39],
+             [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27], [0.43, 0.39, 0.18],
+             [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], [0.33, 0.12, 0.55],
+             [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
+   
+    data3 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], [0.34, 0.33, 0.33],
+            [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], [0.33, 0.36, 0.31], [0.50, 0.25, 0.25],
+            [0.52, 0.26, 0.22], [0.48, 0.27, 0.25], [0.51, 0.24, 0.25], [0.61, 0.19, 0.20],
+            [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17], [0.42, 0.31, 0.27],
+            [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14], [0.71, 0.13, 0.16],
+            [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], [0.31, 0.38, 0.31],
+            [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24], [0.47, 0.29, 0.24],
+            [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18], [0.53, 0.32, 0.15],
+            [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33], [0.22, 0.48, 0.30],
+            [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10], [0.59, 0.23, 0.18],
+            [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
+            [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
+            [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
+   
+    data4 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23], [0.38, 0.07, 0.55],
+             [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35], [0.16, 0.44, 0.40],
+             [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37], [0.15, 0.63, 0.22],
+             [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12], [0.41, 0.49, 0.10],
+             [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16], [0.19, 0.42, 0.39],
+             [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27], [0.43, 0.39, 0.18],
+             [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], [0.33, 0.12, 0.55],
+             [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
+
+   
+    data = [data1, data2, data3, data4]
+   
+    #    **Input segment line coords**
+    chart1_line_starts = [[20, 0], [50, 0], [80, 0], [20, 35], [35, 60], [10, 18]]
+    chart1_line_ends = [[20, 35], [50, 85], [80, 35], [80, 35], [65, 60], [90, 18]]
+   
+    chart2_line_starts = [[0, 0], [0, 0]]
+    chart2_line_ends = [[0, 0], [0, 0]]
+   
+    chart3_line_starts = [[0, 0], [0, 0]]
+    chart3_line_ends = [[0, 0], [0, 0]]
+   
+    chart4_line_starts = [[0, 0], [0, 0]]
+    chart4_line_ends = [[0, 0], [0, 0]]
+   
+    line_starts = [chart1_line_starts, chart2_line_starts, chart3_line_starts, chart4_line_starts]
+    line_ends = [chart1_line_ends, chart2_line_ends, chart3_line_ends, chart4_line_ends]
+   
+    #    **Input segment line colors**
+    segment_line_color1 = 'black'; segment_line_color2 = 'white'
+    segment_line_color3 = 'black'; segment_line_color4 = 'black'
+   
+    segment_line_colors = [segment_line_color1, segment_line_color2,
+                           segment_line_color3, segment_line_color4]
+   
+    #    **Input segment labels and their coords**
+    seg_labels = [['Label1', [30, 130]], ['Label2', [65, 150]]]
+   
+    #    **Input shift along the x axis**
+    x_shift1 = 0; x_shift2 = 0; x_shift3 = 100; x_shift4 = 100
+    shift_x = [x_shift1, x_shift2, x_shift3, x_shift4]
+   
+    #    **Input shift along the y axis**
+    y_shift1 = 115; y_shift2 = 0; y_shift3 = 115; y_shift4 = 0
+    shift_y = [y_shift1, y_shift2, y_shift3, y_shift4]
+   
+    #    **Input angles of rotation**
+    angle1 = 180; angle2 = 129; angle3 = 180; angle4 = 0
+    angles = [angle1, angle2, angle3, angle4]
+
+    #    **Magnifications**
+    mag1 = 0.5; mag2 = .75; mag3 = 1; mag4 = 1.5
+    magnifications = [mag1, mag2, mag3, mag4]
+   
+    #    **Input cuts (integers)**
+    ticks1 = [["L", 0], ["R", 0], ["T", 0]]
+    ticks2 = [["L", 0], ["R", 0], ["T", 0]]
+    ticks3 = [["L", 50], ["R", 0], ["T", 0]]
+    ticks4 = [["L", 10], ["R", 30], ["T", 20]]
+    ticks = [ticks1, ticks2, ticks3, ticks4]
+   
+    #    **Input line colors**
+    colors1 = ["red", "blue", "green"]
+    colors2 = ["red", "blue", "green"]
+    colors3 = ["red", "blue", "green"]
+    colors4 = ["red", "blue", "green"]
+    colors = [colors1, colors2, colors3, colors4]
+   
+    #    **Input line widths**
+    linews1 = [.8, .8, .8]
+    linews2 = [.8, .8, .8]
+    linews3 = [.8, .8, .8]
+    linews4 = [.8, .8, .8]
+    linews = [linews1, linews2, linews3, linews4]
+
+    #    **Input line amount (1, 5, or 10)**
+    num_lines1 = 5 ; num_lines2 = 5 ; num_lines3 = 10 ; num_lines4 = 10
+    num_lines = [num_lines1, num_lines2, num_lines3, num_lines4]
+
+    #    **Input edge labels choice**
+    label1 = False ; label2 = False ; label3 = False ; label4 = True
+    labels = [label1, label2, label3, label4]
+
+    #    **Input contours choice**
+    contour1 = True ; contour2 = False ; contour3 = False ; contour4 = True
+    contours = [contour1, contour2, contour3, contour4]
+   
+    #    **Input contour level**
+    contour_level1 = 20; contour_level2 = 10; contour_level3 = 10; contour_level4 = 10
+    contour_levels = [contour_level1, contour_level2, contour_level3, contour_level4]
+
+    #    **Input color map choice (viridis, magma, Blues, PuBuGn, YlGn, etc.)**
+    cmap1 = 'Purples'; cmap2 = 'PuBuGn'; cmap3 = 'magma'; cmap4 = 'Blues'
+    cmaps = [cmap1, cmap2, cmap3, cmap4]
+   
+    #    **Input data plot colors**
+    data_color1 = "yellow"; data_color2 = "green"; data_color3 = "orange"; data_color4 = "cyan"
+    data_colors = [data_color1, data_color2, data_color3, data_color4]
+   
+    #    **Input data point markers (o, s, *, +, x, X, etc.) **
+    data_marker1 = "o"; data_marker2 = "s"; data_marker3 = "X"; data_marker4 = "*"
+    data_markers = [data_marker1, data_marker2, data_marker3, data_marker4]
+   
+    #    **Input data point marker size**
+    data_marker_size1 = 20; data_marker_size2 = 40; data_marker_size3 = 60; data_marker_size4 = 20
+    data_marker_sizes = [data_marker_size1, data_marker_size2, data_marker_size3, data_marker_size4]
+   
+    #    **Input number of ternary plots**
+    number_of_plots = 4
+   
+    for i in range(number_of_plots):
+        data[i] = [check_ternary_coords(d) for d in data[i]]
+ 
+    centers = []
+    for i in range(number_of_plots):
+        centers.append(compute_ternary_center(ax, shift_x[i], shift_y[i]))
+    scatter_plots = []
+    for i in range(1, number_of_plots + 1):
+        scatter_plot = plot_on_ax(ax, data[i-1], data_colors[i-1], data_markers[i-1], f"Dataset {i}",
+                    angles[i-1], centers[i-1], magnifications[i-1], ticks[i-1],
+                    colors[i-1], linews[i-1], line_starts[i-1], line_ends[i-1],
+                    seg_labels=seg_labels, shift_x=shift_x[i-1], shift_y=shift_y[i-1],  
+                    num_lines=num_lines[i-1], labels=labels[i-1], contours=contours[i-1],
+                    contour_levels=contour_levels[i-1], data_marker_size=data_marker_sizes[i-1],
+                    cmap=cmaps[i-1], segment_line_colors=segment_line_colors[i-1])
+       
+        scatter_plots.append(scatter_plot)
+   
+    ax.set_aspect('equal')
+    ax.legend()
+    ax.set_title("Ternary Plot(s)")
+    plt.tight_layout()
+    plt.axis('off')
+    plt.show()
+   
+    # Input '%matplotlib qt' into the console to have the plots be interactive
+    # Input '%matplotlib inline' to go back to seeing the static plots
+
+if __name__ == "__main__":
+    main()
