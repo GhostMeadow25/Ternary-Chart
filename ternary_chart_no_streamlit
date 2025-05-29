@@ -1,4 +1,10 @@
-import math as ma, matplotlib.pyplot as plt, numpy as np
+"""
+The Ternary Chart Program creates 1-4 ternary charts.
+It takes ternary coords and outputs one plot with the chart(s).
+The program was written by EK Esawi & Lily J. Meadow.
+"""
+
+import math as ma, matplotlib.pyplot as plt, numpy as np, pandas as pd
 from matplotlib.transforms import TransformedPath
 from matplotlib.path import Path
 
@@ -125,10 +131,10 @@ def TtB(tcords):
        if len(tcords[0])!=3:
           print("OPS there must be 3 coordinates")
           exit()
-         
-       ycords=[tcords[i][2]*ma.cos(ma.radians(30)) for i in range(len(tcords))]
-       xcords=[tcords[i][1]+ycords[i]*ma.tan(ma.radians(30)) for i in range(len(tcords))]
-       res=list(map(list, zip(xcords,ycords)))
+          
+    ycords=[tcords[i][2]*ma.cos(ma.radians(30)) for i in range(len(tcords))]
+    xcords=[tcords[i][1]+ycords[i]*ma.tan(ma.radians(30)) for i in range(len(tcords))]
+    res=list(map(list, zip(xcords,ycords)))
 
     return (res)
 
@@ -292,14 +298,29 @@ def transform_coordinates(coords, angle=0, center=(0,0), shift_x=0, shift_y=0,
 
     return coords
 
+#============================================================================ 
+
+def parse_ternary_column(col):
+    parsed = []
+    for entry in col.dropna():
+        try:
+            coords = [float(x.strip()) for x in entry.split(',')]
+            if len(coords) == 3:
+                parsed.append(coords)
+        except Exception:
+            continue
+    return parsed
+
 #============================================================================  
 
-def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0, center=[0,0], magnifications=1,
-               ticks=[["L",0],["R",0],["T",0]], colors=["red", "blue", "green"], linews=[.8, .8, .8], 
-               line_starts=[], line_ends=[], seg_labels=[], shift_x=0,
-               shift_y=0, num_lines=10, labels=False, contours=False,
-               contour_levels=10, data_marker_size=50, cmap='viridis',
-               segment_line_colors='black'):
+def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0, 
+               center=[0,0], magnifications=1, ticks=[["L",0],["R",0],["T",0]], 
+               colors=["red", "blue", "green"], linews=[.8, .8, .8], line_starts=[], 
+               line_ends=[], seg_labels=[], shift_x=0, shift_y=0, num_lines=10, 
+               labels=False, label_allignments=[['center', 'center'], ['center', 
+                                                'center'], ['center', 'center']],
+               label_fontsizes=12, contours=False, contour_levels=10, 
+               data_marker_size=50, cmap='viridis', segment_line_colors='black'):
     """
     Plot a single ternary plot on the axis.
 
@@ -324,15 +345,18 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
     while len(linews) < 3:
         linews.append(linews[-1])
 
-    tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center, shift_x, shift_y, magnifications)
+    tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center, 
+                           shift_x, shift_y, magnifications)
     
     edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
     
     cart_coords = np.array(TtB(data))
     
-    transformed_coords = transform_coordinates(cart_coords, angle, center, shift_x, shift_y, magnifications)
+    transformed_coords = transform_coordinates(cart_coords, angle, center, 
+                                            shift_x, shift_y, magnifications)
    
-    ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
+    ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y, 
+                            magnifications)
     
     point_verification = points_in_ternary(ternary_vertices, transformed_coords)
     
@@ -367,7 +391,8 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
    
         levels = np.linspace(0, 1, contour_levels - 3)
    
-        contour = ax.contourf(grid_x, grid_y, smoothed_density.T, levels=levels, cmap=cmap)
+        contour = ax.contourf(grid_x, grid_y, smoothed_density.T, 
+                              levels=levels, cmap=cmap)
 
         triangle_path = Path(ternary_vertices)
         transformed_triangle_path = TransformedPath(triangle_path, ax.transData)
@@ -400,11 +425,11 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
         LS, RS, TS = tlines_output[1]
            
         LS_cart = [transform_coordinates(TtB([ls]), angle, center,
-                                               shift_x, shift_y, magnifications  )[0] for ls in LS]
+                            shift_x, shift_y, magnifications)[0] for ls in LS]
         RS_cart = [transform_coordinates(TtB([rs]), angle, center,
-                                               shift_x, shift_y, magnifications  )[0] for rs in RS]
+                            shift_x, shift_y, magnifications)[0] for rs in RS]
         TS_cart = [transform_coordinates(TtB([ts]), angle, center,
-                                               shift_x, shift_y, magnifications  )[0] for ts in TS]
+                            shift_x, shift_y, magnifications)[0] for ts in TS]
        
         tick_interval = num_lines
         
@@ -435,19 +460,28 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
             right_labels = right_labels[remove_top:]
        
         for (x, y), label in zip(LS_cart, left_labels):
-            ax.text(x, y, label, color='red', fontsize=12 * magnifications, ha='right', va='top')
+            ha, va = label_allignments[0]
+            ax.text(x, y, label, color='red', fontsize=label_fontsizes, 
+                    ha=ha, va=va)
 
         for (x, y), label in zip(RS_cart, right_labels):
-            ax.text(x, y, label, color='blue', fontsize=12 * magnifications, ha='left', va='center')
+            ha, va = label_allignments[1]
+            ax.text(x, y, label, color='blue', fontsize=label_fontsizes, 
+                    ha=ha, va=va)
 
         for (x, y), label in zip(TS_cart, top_labels):
-            ax.text(x, y, label, color='green', fontsize=12 * magnifications, ha='right', va='bottom')
+            ha, va = label_allignments[2]
+            ax.text(x, y, label, color='green', fontsize=label_fontsizes, 
+                    ha=ha, va=va)
         
-    line_starts_transformed = transform_coordinates(line_starts, angle, center, shift_x, shift_y, magnifications)
-    line_ends_transformed = transform_coordinates(line_ends, angle, center, shift_x, shift_y, magnifications)
+    line_starts_transformed = transform_coordinates(line_starts, angle, center, 
+                                            shift_x, shift_y, magnifications)
+    line_ends_transformed = transform_coordinates(line_ends, angle, center, 
+                                            shift_x, shift_y, magnifications)
    
     for start, end in zip(line_starts_transformed, line_ends_transformed):
-        ax.plot([start[0], end[0]], [start[1], end[1]], color= segment_line_colors)
+        ax.plot([start[0], end[0]], [start[1], end[1]], 
+                color= segment_line_colors)
 
     return scatter_plot
 
@@ -456,60 +490,78 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
 def main():
    
     fig, ax = plt.subplots(figsize=(8, 8))
-   
-    #    **Input data**
-    data1 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], [0.34, 0.33, 0.33],
-            [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], [0.33, 0.36, 0.31], [0.50, 0.25, 0.25],
-            [0.52, 0.26, 0.22], [0.48, 0.27, 0.25], [0.51, 0.24, 0.25], [0.61, 0.19, 0.20],
-            [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17], [0.42, 0.31, 0.27],
-            [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14], [0.71, 0.13, 0.16],
-            [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], [0.31, 0.38, 0.31],
-            [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24], [0.47, 0.29, 0.24],
-            [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18], [0.53, 0.32, 0.15],
-            [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33], [0.22, 0.48, 0.30],
-            [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10], [0.59, 0.23, 0.18],
-            [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
-            [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
-            [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
-   
-    data2 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23], [0.38, 0.07, 0.55],
-             [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35], [0.16, 0.44, 0.40],
-             [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37], [0.15, 0.63, 0.22],
-             [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12], [0.41, 0.49, 0.10],
-             [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16], [0.19, 0.42, 0.39],
-             [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27], [0.43, 0.39, 0.18],
-             [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], [0.33, 0.12, 0.55],
-             [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
-   
-    data3 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], [0.34, 0.33, 0.33],
-            [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], [0.33, 0.36, 0.31], [0.50, 0.25, 0.25],
-            [0.52, 0.26, 0.22], [0.48, 0.27, 0.25], [0.51, 0.24, 0.25], [0.61, 0.19, 0.20],
-            [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17], [0.42, 0.31, 0.27],
-            [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14], [0.71, 0.13, 0.16],
-            [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], [0.31, 0.38, 0.31],
-            [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24], [0.47, 0.29, 0.24],
-            [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18], [0.53, 0.32, 0.15],
-            [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33], [0.22, 0.48, 0.30],
-            [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10], [0.59, 0.23, 0.18],
-            [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
-            [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
-            [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
-   
-    data4 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23], [0.38, 0.07, 0.55],
-             [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35], [0.16, 0.44, 0.40],
-             [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37], [0.15, 0.63, 0.22],
-             [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12], [0.41, 0.49, 0.10],
-             [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16], [0.19, 0.42, 0.39],
-             [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27], [0.43, 0.39, 0.18],
-             [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], [0.33, 0.12, 0.55],
-             [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
+    
+    #    **Input data entry choice**
+    csv_data = True
+    
+    if csv_data: 
+        csv_path = "C:/Users/lilym/Downloads/Ternary Coords CSV.csv"
+        chart_column_names = ["Data1", "Data2", "Data3", "Data4"]
+    
+        df = pd.read_csv(csv_path)
+        data = [parse_ternary_column(df[col]) for col in chart_column_names]
+        data = [[check_ternary_coords(point) for point in chart] for chart in data]
 
-   
-    data = [data1, data2, data3, data4]
-   
+    else: 
+        
+        #    **Input data**
+        data1 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], 
+                 [0.34, 0.33, 0.33], [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], 
+                 [0.33, 0.36, 0.31], [0.50, 0.25, 0.25], [0.52, 0.26, 0.22], 
+                 [0.48, 0.27, 0.25], [0.51, 0.24, 0.25], [0.61, 0.19, 0.20],
+                 [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17], 
+                 [0.42, 0.31, 0.27], [0.71, 0.13, 0.16], [0.31, 0.38, 0.31],
+                 [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14],
+                 [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], 
+                 [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24], 
+                 [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18],
+                 [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33],
+                 [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10], 
+                 [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
+                 [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
+                 [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
+       
+        data2 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23], 
+                 [0.38, 0.07, 0.55], [0.16, 0.44, 0.40], [0.15, 0.63, 0.22],
+                 [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35], 
+                 [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37], 
+                 [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12],
+                 [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16], 
+                 [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27],
+                 [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], 
+                 [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
+       
+        data3 = [[0.33, 0.33, 0.34], [0.31, 0.34, 0.35], [0.32, 0.31, 0.37], 
+                 [0.35, 0.32, 0.33], [0.36, 0.34, 0.30], [0.33, 0.36, 0.31],
+                 [0.52, 0.26, 0.22], [0.48, 0.27, 0.25], [0.51, 0.24, 0.25],
+                 [0.60, 0.20, 0.20], [0.58, 0.18, 0.24], [0.62, 0.21, 0.17],
+                 [0.70, 0.15, 0.15], [0.68, 0.16, 0.16], [0.72, 0.14, 0.14],
+                 [0.30, 0.40, 0.30], [0.32, 0.39, 0.29], [0.28, 0.41, 0.31], 
+                 [0.45, 0.30, 0.25], [0.46, 0.31, 0.23], [0.44, 0.32, 0.24],
+                 [0.50, 0.30, 0.20], [0.49, 0.29, 0.22], [0.51, 0.31, 0.18],
+                 [0.20, 0.50, 0.30], [0.19, 0.51, 0.30], [0.18, 0.49, 0.33],
+                 [0.80, 0.10, 0.10], [0.81, 0.09, 0.10], [0.79, 0.11, 0.10],
+                 [0.60, 0.25, 0.15], [0.58, 0.24, 0.18], [0.61, 0.26, 0.13],
+                 [0.40, 0.30, 0.30], [0.39, 0.32, 0.29], [0.38, 0.33, 0.29],
+                 [0.10, 0.80, 0.10], [0.08, 0.79, 0.13], [0.11, 0.77, 0.12]]
+       
+        data4 = [[0.28, 0.39, 0.33], [0.30, 0.54, 0.16], [0.26, 0.51, 0.23],
+                 [0.48, 0.12, 0.40], [0.34, 0.13, 0.53], [0.41, 0.24, 0.35],
+                 [0.35, 0.28, 0.37], [0.36, 0.30, 0.34], [0.51, 0.12, 0.37],
+                 [0.09, 0.37, 0.54], [0.37, 0.23, 0.40], [0.42, 0.46, 0.12],
+                 [0.37, 0.50, 0.13], [0.39, 0.37, 0.24], [0.33, 0.51, 0.16],
+                 [0.23, 0.16, 0.61], [0.40, 0.13, 0.47], [0.33, 0.40, 0.27], 
+                 [0.45, 0.26, 0.29], [0.11, 0.47, 0.42], [0.43, 0.47, 0.10], 
+                 [0.23, 0.57, 0.20], [0.20, 0.16, 0.64], [0.63, 0.12, 0.25]]
+    
+        data = [data1, data2, data3, data4]
+        
+    #    **Input number of ternary plots**
+    number_of_plots = 4
+       
     #    **Input segment line coords**
-    chart1_line_starts = [[20, 0], [50, 0], [80, 0], [20, 35], [35, 60], [10, 18]]
-    chart1_line_ends = [[20, 35], [50, 85], [80, 35], [80, 35], [65, 60], [90, 18]]
+    chart1_line_starts = [[50, 0], [0, 0]]
+    chart1_line_ends = [[50, 86], [0, 0]]
    
     chart2_line_starts = [[0, 0], [0, 0]]
     chart2_line_ends = [[0, 0], [0, 0]]
@@ -531,10 +583,27 @@ def main():
                            segment_line_color3, segment_line_color4]
    
     #    **Input segment labels and their coords**
-    seg_labels = [['Label1', [30, 130]], ['Label2', [65, 150]]]
+    seg_labels = [['Chart 2', [50, 100]], ['Chart 4', [170, 100]]]
+    
+    #    **Input choice to see corner labels**
+    corner_label_choice1 = False ; corner_label_choice2 = False
+    corner_label_choice3 = True ; corner_label_choice4 = False
+    
+    corner_label_choice = [corner_label_choice1, corner_label_choice2, 
+                     corner_label_choice3, corner_label_choice4]
+    
+    #    **Input label coords and name**
+    corner_labels = [['A', [-8, -3]], ['B', [108, -3]], ['C', [50,93]]]
+             
+    #    **Input cuts (integers)**
+    ticks1 = [["L", 0], ["R", 0], ["T", 0]]
+    ticks2 = [["L", 0], ["R", 0], ["T", 0]]
+    ticks3 = [["L", 50], ["R", 0], ["T", 0]]
+    ticks4 = [["L", 0], ["R", 0], ["T", 0]]
+    ticks = [ticks1, ticks2, ticks3, ticks4]
    
     #    **Input shift along the x axis**
-    x_shift1 = 0; x_shift2 = 0; x_shift3 = 100; x_shift4 = 100
+    x_shift1 = 0; x_shift2 = 0; x_shift3 = 118; x_shift4 = 118
     shift_x = [x_shift1, x_shift2, x_shift3, x_shift4]
    
     #    **Input shift along the y axis**
@@ -542,19 +611,12 @@ def main():
     shift_y = [y_shift1, y_shift2, y_shift3, y_shift4]
    
     #    **Input angles of rotation**
-    angle1 = 180; angle2 = 129; angle3 = 180; angle4 = 0
+    angle1 = 0; angle2 = 0; angle3 = 115; angle4 = 0
     angles = [angle1, angle2, angle3, angle4]
 
     #    **Magnifications**
-    mag1 = 0.5; mag2 = .75; mag3 = 1; mag4 = 1.5
+    mag1 = .75; mag2 = 1; mag3 = 1; mag4 = 1
     magnifications = [mag1, mag2, mag3, mag4]
-   
-    #    **Input cuts (integers)**
-    ticks1 = [["L", 0], ["R", 0], ["T", 0]]
-    ticks2 = [["L", 0], ["R", 0], ["T", 0]]
-    ticks3 = [["L", 50], ["R", 0], ["T", 0]]
-    ticks4 = [["L", 10], ["R", 30], ["T", 20]]
-    ticks = [ticks1, ticks2, ticks3, ticks4]
    
     #    **Input line colors**
     colors1 = ["red", "blue", "green"]
@@ -571,15 +633,27 @@ def main():
     linews = [linews1, linews2, linews3, linews4]
 
     #    **Input line amount (1, 5, or 10)**
-    num_lines1 = 5 ; num_lines2 = 5 ; num_lines3 = 10 ; num_lines4 = 10
+    num_lines1 = 10 ; num_lines2 = 10 ; num_lines3 = 10 ; num_lines4 = 10
     num_lines = [num_lines1, num_lines2, num_lines3, num_lines4]
 
     #    **Input edge labels choice**
-    label1 = False ; label2 = False ; label3 = False ; label4 = True
+    label1 = False ; label2 = True ; label3 = False ; label4 = False
     labels = [label1, label2, label3, label4]
+    
+    #    **Input edge labels allignment**
+    label_allignment1 = [['center', 'top'], ['left', 'bottom'], ['right', 'bottom']]
+    label_allignment2 = [['center', 'top'], ['left', 'bottom'], ['right', 'bottom']]
+    label_allignment3 = [['center', 'top'], ['left', 'bottom'], ['right', 'bottom']]
+    label_allignment4 = [['center', 'top'], ['left', 'bottom'], ['right', 'bottom']]
+    
+    label_allignments = [label_allignment1, label_allignment2, 
+                         label_allignment3, label_allignment4]
+    
+    label_fontsize1 = 12; label_fontsize2 = 10; label_fontsize3 = 12; label_fontsize4 = 11
+    label_fontsizes = [label_fontsize1, label_fontsize2, label_fontsize3, label_fontsize4]
 
     #    **Input contours choice**
-    contour1 = True ; contour2 = False ; contour3 = False ; contour4 = True
+    contour1 = False ; contour2 = False ; contour3 = False ; contour4 = True
     contours = [contour1, contour2, contour3, contour4]
    
     #    **Input contour level**
@@ -591,7 +665,7 @@ def main():
     cmaps = [cmap1, cmap2, cmap3, cmap4]
    
     #    **Input data plot colors**
-    data_color1 = "yellow"; data_color2 = "green"; data_color3 = "orange"; data_color4 = "cyan"
+    data_color1 = "purple"; data_color2 = "green"; data_color3 = "orange"; data_color4 = "cyan"
     data_colors = [data_color1, data_color2, data_color3, data_color4]
    
     #    **Input data point markers (o, s, *, +, x, X, etc.) **
@@ -602,9 +676,6 @@ def main():
     data_marker_size1 = 20; data_marker_size2 = 40; data_marker_size3 = 60; data_marker_size4 = 20
     data_marker_sizes = [data_marker_size1, data_marker_size2, data_marker_size3, data_marker_size4]
    
-    #    **Input number of ternary plots**
-    number_of_plots = 4
-   
     for i in range(number_of_plots):
         data[i] = [check_ternary_coords(d) for d in data[i]]
  
@@ -613,25 +684,42 @@ def main():
         centers.append(compute_ternary_center(ax, shift_x[i], shift_y[i]))
     scatter_plots = []
     for i in range(1, number_of_plots + 1):
-        scatter_plot = plot_on_ax(ax, data[i-1], data_colors[i-1], data_markers[i-1], f"Dataset {i}",
-                    angles[i-1], centers[i-1], magnifications[i-1], ticks[i-1],
+        scatter_plot = plot_on_ax(ax, data[i-1], data_colors[i-1], 
+                    data_markers[i-1], f"Dataset {i}", angles[i-1], 
+                    centers[i-1], magnifications[i-1], ticks[i-1],
                     colors[i-1], linews[i-1], line_starts[i-1], line_ends[i-1],
-                    seg_labels=seg_labels, shift_x=shift_x[i-1], shift_y=shift_y[i-1],  
-                    num_lines=num_lines[i-1], labels=labels[i-1], contours=contours[i-1],
-                    contour_levels=contour_levels[i-1], data_marker_size=data_marker_sizes[i-1],
+                    seg_labels=seg_labels, shift_x=shift_x[i-1], 
+                    shift_y=shift_y[i-1], num_lines=num_lines[i-1], 
+                    labels=labels[i-1], label_allignments=label_allignments[i-1], 
+                    label_fontsizes=label_fontsizes[i-1], contours=contours[i-1],
+                    contour_levels=contour_levels[i-1], 
+                    data_marker_size=data_marker_sizes[i-1],
                     cmap=cmaps[i-1], segment_line_colors=segment_line_colors[i-1])
-       
+        
         scatter_plots.append(scatter_plot)
+        
+    for i in range(number_of_plots):
+        if corner_label_choice[i]:
+            for label, coord in corner_labels:
+                coords = np.array([[coord[0], coord[1]]])
+                coords = transform_coordinates(coords, angle=angles[i],
+                    center=centers[i], shift_x=shift_x[i],
+                    shift_y=shift_y[i], magnifications=magnifications[i])
+                x, y = coords[0]
+                ax.text(x, y, label,
+                        ha='center', va='center', fontsize=12, fontweight='bold')
    
     ax.set_aspect('equal')
-    ax.legend()
-    ax.set_title("Ternary Plot(s)")
+    
+    #    **Legend allignment**
+    ax.legend(loc='upper right')
+    
+    #    **Input title**
+    ax.set_title("Ternary Plot(s)", ha='center', va='center', fontsize=16)
+    
     plt.tight_layout()
     plt.axis('off')
     plt.show()
-   
-    # Input '%matplotlib qt' into the console to have the plots be interactive
-    # Input '%matplotlib inline' to go back to seeing the static plots
 
 if __name__ == "__main__":
     main()
