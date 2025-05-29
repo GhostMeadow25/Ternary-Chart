@@ -492,10 +492,10 @@ def main():
     fig, ax = plt.subplots(figsize=(8, 8))
     
     #    **Input data entry choice**
-    csv_data = True
+    csv_data = False
     
     if csv_data: 
-        csv_path = "C:/Users/lilym/Downloads/Ternary Coords CSV.csv"
+        csv_path = ""
         chart_column_names = ["Data1", "Data2", "Data3", "Data4"]
     
         df = pd.read_csv(csv_path)
