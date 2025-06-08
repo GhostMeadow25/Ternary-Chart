@@ -816,7 +816,7 @@ Ternary_Chart_1
                         "shift_x": shift_x, "shift_y": shift_y, "angle": angle,
                         "magnification": magnification, "ticks": ticks,
                         "colors": [line_color_1, line_color_2, line_color_3],
-                        "marker_color": marker_color, "marker_style": marker_style, 
+                        "marker_color": marker_color, "marker_style": marker_style,
                         "marker_size": marker_size, "labels": labels, 
                         "contours": contours, "contour_levels": contour_levels,
                         "show_data_with_contours": show_data_with_contours,
@@ -832,6 +832,8 @@ Ternary_Chart_1
                         "remove_outside_points": remove_outside_points,})
             
         errors = set()
+        
+        show_legend_overall = any(st.session_state.get(f"show_legend_{j}", True) for j in range(num_charts))
         
         if 'centers' not in st.session_state:
             st.session_state.centers = {}
@@ -930,6 +932,7 @@ Ternary_Chart_1
                     ax, new_col_data, 
                     color=settings["marker_color"],  
                     marker=settings["marker_style"],
+                    label=f"Ternary Chart {i+1}",
                     center=center,
                     angle=settings["angle"],
                     magnifications=settings["magnification"],
@@ -969,7 +972,7 @@ Ternary_Chart_1
                 y=st.session_state.get("chart_title_yoffset", 1.02))
 
         if plot_success:
-            if show_legend:
+            if show_legend_overall:
                 ax.legend()
             else:
                 leg = ax.get_legend()
