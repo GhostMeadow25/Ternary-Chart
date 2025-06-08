@@ -1004,7 +1004,6 @@ def main():
     if tight_layout:
         plt.tight_layout()
     
-    #ax.legend(loc=legend_alignment)
     ax.legend(bbox_to_anchor=(x_offset, y_offset))
     plt.axis('off')
     ax.set_aspect('equal')
