@@ -675,12 +675,6 @@ Ternary_Chart_1
                 st.slider("Title Y offset", min_value=0.9, max_value=1.2, 
                           value=1.02, step=0.01, key="chart_title_yoffset")
                 
-            show_legend = st.checkbox("Show legend", value=True, key="show_legend_global")
-            
-            if show_legend:
-                st.slider("Legend X Offset", min_value=-1.0, max_value=2.0, value=0.0, step=0.05, key="legend_x_offset")
-                st.slider("Legend Y Offset", min_value=-1.0, max_value=2.0, value=1.0, step=0.05, key="legend_y_offset")
-
         for i in range(num_charts):
             if df is None and (not charts_data.get(f"Plot_{i + 1}") or len(charts_data.get(f"Chart_{i + 1}")) == 0):
                 st.warning(f"Plot {i + 1}: No valid data; skipping customization options.")
@@ -696,6 +690,8 @@ Ternary_Chart_1
                     col = st.selectbox(f"Select column for plot {i+1}", columns, key=f'col_{i}')
                 else:
                     col = f"Manual Data {i+1}"
+                    
+                show_legend = st.checkbox("Show legend", value=True, key=f"show_legend_{i}")
                 
                 # --- Plot Line Choices ---
                 st.markdown("### Plot Lines")
@@ -971,13 +967,14 @@ Ternary_Chart_1
                 fontsize=st.session_state.get("chart_title_fontsize", 16),
                 ha=st.session_state.get("chart_title_halign", "center"),
                 y=st.session_state.get("chart_title_yoffset", 1.02))
-            
-        if st.session_state.get("show_legend_global", True):
-            x_offset = st.session_state.get("legend_x_offset", 0.0)
-            y_offset = st.session_state.get("legend_y_offset", 1.0)
-            ax.legend(bbox_to_anchor=(x_offset, y_offset))
 
         if plot_success:
+            if show_legend:
+                ax.legend()
+            else:
+                leg = ax.get_legend()
+                if leg:
+                    leg.remove()
             ax.set_aspect('equal')
             plt.tight_layout()
             plt.axis('off')
