@@ -9,6 +9,7 @@ from matplotlib.transforms import TransformedPath
 from matplotlib.path import Path
 import streamlit as st, pandas as pd
 from scipy.ndimage import gaussian_filter
+from scipy.interpolate import griddata
 import io
 
 def Tlines(ax, i, verc, cc, lw, angle=0, center=(0,0), shift_x=0, shift_y=0, magnifications=1):
@@ -323,7 +324,9 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                contour_levels=10, data_marker_size=50, cmap='viridis',
                coord_system='Ternary', segment_line_color='black', segment_line_width=1.0,
                left_label_color='red', right_label_color='blue', top_label_color='green',
-               edge_color='blue', cartesian_labels=[], cartesian_label_style={}):
+               edge_color='blue', cartesian_labels=[], cartesian_label_style={},
+               show_data_with_contours=True, contour_type="density", variable_data=None,
+               remove_outside_points=False):
     """
     Plot a single ternary plot on the given axis.
   
@@ -359,57 +362,109 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
     while len(linews) < 3:
         linews.append(linews[-1])
 
-    tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center, shift_x, shift_y, magnifications)
-    
-    edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications, edge_color)
-    
-    cart_coords = np.array(TtB(data))
-    
-    transformed_coords = transform_coordinates(cart_coords, angle, center, shift_x, shift_y, magnifications)
+    tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center,
+                           shift_x, shift_y, magnifications)
    
-    ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications, edge_color)
+    edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
+   
+    cart_coords = np.array(TtB(data))
+   
+    transformed_coords = transform_coordinates(cart_coords, angle, center,
+                                            shift_x, shift_y, magnifications)
+   
+    ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y,
+                            magnifications)
+   
     
     point_verification = points_in_ternary(ternary_vertices, transformed_coords)
+    point_verification = np.array(point_verification)
     
-    if False in point_verification:
-        st.write("⚠️ Point(s) outside of plot. Please check data.")
+    if remove_outside_points:
+        cart_coords = cart_coords[point_verification]
+        transformed_coords = transformed_coords[point_verification]
+        valid_coords = transformed_coords
+    
+        if contour_type.lower() == 'variable' and variable_data is not None:
+            variable_data = np.array(variable_data)
+            if len(variable_data) == len(point_verification):
+                valid_variable_data = variable_data[point_verification]
+            else:
+                print("Warning: Length mismatch between data. Skipping contour data filtering.")
+                valid_variable_data = variable_data
+        else:
+            valid_variable_data = variable_data
+    else:
+        if not point_verification.all():
+            print("Point(s) outside of plot. Please check data.")
+        valid_coords = transformed_coords
+        valid_variable_data = variable_data
    
     if contours:
-        valid_coords = transformed_coords[point_verification]
-        
+        valid_coords = transformed_coords
+        point_verification = points_in_ternary(ternary_vertices, transformed_coords)
+        point_verification = np.array(point_verification)
+    
         x = valid_coords[:, 0]
         y = valid_coords[:, 1]
-   
-        x_min, x_max = ternary_vertices[:, 0].min(), ternary_vertices[:, 0].max()
-        y_min, y_max = ternary_vertices[:, 1].min(), ternary_vertices[:, 1].max()
-   
-        high_res = 150
-        bins_x = np.linspace(x_min, x_max, high_res)
-        bins_y = np.linspace(y_min, y_max, high_res)
-   
-        density, x_edges, y_edges = np.histogram2d(x, y, bins=[bins_x, bins_y])
-   
-        smoothed_density = gaussian_filter(density, sigma=8)
-   
-        density_max = smoothed_density.max()
-        smoothed_density /= density_max
-   
-        grid_x, grid_y = np.meshgrid(
-            0.5 * (x_edges[:-1] + x_edges[1:]),
-            0.5 * (y_edges[:-1] + y_edges[1:])
-        )
-   
-        levels = np.linspace(0, 1, contour_levels - 3)
-   
-        contour = ax.contourf(grid_x, grid_y, smoothed_density.T, levels=levels, cmap=cmap)
-
-        triangle_path = Path(ternary_vertices)
-        transformed_triangle_path = TransformedPath(triangle_path, ax.transData)
-   
-        contour.set_clip_path(transformed_triangle_path, transform=ax.transData)
-   
-        cbar = plt.colorbar(contour, ax=ax, orientation='vertical', pad=0.05)
-        cbar.set_label("Density")
+    
+        if contour_type.lower() == 'density':
+            x_min, x_max = ternary_vertices[:, 0].min(), ternary_vertices[:, 0].max()
+            y_min, y_max = ternary_vertices[:, 1].min(), ternary_vertices[:, 1].max()
+    
+            high_res = 150
+            bins_x = np.linspace(x_min, x_max, high_res)
+            bins_y = np.linspace(y_min, y_max, high_res)
+    
+            density, x_edges, y_edges = np.histogram2d(x, y, bins=[bins_x, bins_y])
+    
+            smoothed_density = gaussian_filter(density, sigma=8)
+            smoothed_density /= smoothed_density.max()
+    
+            grid_x, grid_y = np.meshgrid(
+                0.5 * (x_edges[:-1] + x_edges[1:]),
+                0.5 * (y_edges[:-1] + y_edges[1:])
+            )
+    
+            levels = np.linspace(0, 1, contour_levels - 3)
+    
+            contour = ax.contourf(grid_x, grid_y, smoothed_density.T,
+                                  levels=levels, cmap=cmap)
+    
+            triangle_path = Path(ternary_vertices)
+            transformed_triangle_path = TransformedPath(triangle_path, ax.transData)
+            contour.set_clip_path(transformed_triangle_path, transform=ax.transData)
+    
+            cbar = plt.colorbar(contour, ax=ax, orientation='vertical', pad=0.05)
+            cbar.set_label("Density")
+    
+        elif contour_type.lower() == 'variable' and valid_variable_data is not None:
+            if len(valid_variable_data) != len(valid_coords):
+                st.warning("⚠️ Length mismatch between filtered variable data and valid coordinates. Skipping variable contour.")
+            else:
+                z = np.array(valid_variable_data)
+                x = valid_coords[:, 0]
+                y = valid_coords[:, 1]
+    
+                x_min, x_max = ternary_vertices[:, 0].min(), ternary_vertices[:, 0].max()
+                y_min, y_max = ternary_vertices[:, 1].min(), ternary_vertices[:, 1].max()
+    
+                grid_x, grid_y = np.mgrid[x_min:x_max:100j, y_min:y_max:100j]
+                grid_z = griddata((x, y), z, (grid_x, grid_y), method='linear')
+    
+                cs = ax.contourf(grid_x, grid_y, grid_z, levels=contour_levels, cmap=cmap, alpha=0.5)
+    
+                triangle_path = Path(ternary_vertices)
+                transformed_triangle_path = TransformedPath(triangle_path, ax.transData)
+                cs.set_clip_path(transformed_triangle_path, transform=ax.transData)
+    
+                cbar = plt.colorbar(cs, ax=ax, orientation='vertical', pad=0.05)
+                cbar.set_label("Variable Value")
+    
+        elif variable_data is None or len(variable_data) != len(transformed_coords):
+            st.warning("⚠️ contour_data missing or length mismatch. Skipping contour.")
+    
+        if show_data_with_contours:
+            ax.scatter(x, y, c=[color] * len(x), marker=marker, s=data_marker_size)
 
     scatter_plot = None
     
@@ -565,9 +620,9 @@ Ternary_Chart_1
         charts_data = {}
         
         for i in range(num_charts):
-            st.write(f"### Chart {i + 1} Data")
+            st.write(f"### Plot {i + 1} Data")
         
-            manual_input = st.text_area(f"Enter Data for Chart {i + 1}", height=150)
+            manual_input = st.text_area(f"Enter Data for Plot {i + 1}", height=150)
             
             if manual_input.strip():
                 
@@ -583,22 +638,22 @@ Ternary_Chart_1
                         for row in chart_data:
                             if len(row) == 3:
                                 if abs(sum(row) - 1) >= 1e-5:
-                                    st.warning(f"⚠️ Chart {i + 1}: Coordinates {row} do not sum to 1.")
+                                    st.warning(f"⚠️ Plot {i + 1}: Coordinates {row} do not sum to 1.")
                                     valid_chart = False
                             else:
-                                st.error(f"Chart {i + 1}: Invalid row length: {row}")
+                                st.error(f"Plot {i + 1}: Invalid row length: {row}")
                                 valid_chart = False
         
                         if valid_chart:
-                            st.success(f"Chart {i + 1}: Data parsed successfully!")
-                            charts_data[f"Chart_{i + 1}"] = chart_data
+                            st.success(f"Plot {i + 1}: Data parsed successfully!")
+                            charts_data[f"Plot_{i + 1}"] = chart_data
                         else:
                             valid_data = False
                     else:
-                        st.error(f"Chart {i + 1}: Invalid format. Use full Python list syntax.")
+                        st.error(f"Plot {i + 1}: Invalid format. Use full Python list syntax.")
         
                 except Exception as e:
-                    st.error(f"Chart {i + 1}: Error parsing data: {e}")
+                    st.error(f"Plot {i + 1}: Error parsing data: {e}")
                     valid_data = False
             
     if df is not None or charts_data:
@@ -607,99 +662,142 @@ Ternary_Chart_1
         chart_settings = []
         colormap_options = plt.colormaps()
         
+        with st.sidebar.expander("Chart Options (entire plot)", expanded=True):
+            show_title = st.checkbox("Show chart title", value=True, key="show_title_main")
+        
+            if show_title:
+                st.text_input("Chart title text", value="Ternary Plot(s)", 
+                              key="chart_title_text")
+                st.slider("Title font size", min_value=10, max_value=36, 
+                          value=16, key="chart_title_fontsize")
+                st.selectbox("Title alignment", ["left", "center", "right"], 
+                             index=1, key="chart_title_halign")
+                st.slider("Title Y offset", min_value=0.9, max_value=1.2, 
+                          value=1.02, step=0.01, key="chart_title_yoffset")
+                
+            show_legend = st.checkbox("Show legend", value=True, key="show_legend_global")
+            
+            if show_legend:
+                st.slider("Legend X Offset", min_value=-1.0, max_value=2.0, value=0.0, step=0.05, key="legend_x_offset")
+                st.slider("Legend Y Offset", min_value=-1.0, max_value=2.0, value=1.0, step=0.05, key="legend_y_offset")
+
         for i in range(num_charts):
-            if df is None and (not charts_data.get(f"Chart_{i + 1}") or len(charts_data.get(f"Chart_{i + 1}")) == 0):
-                st.warning(f"Chart {i + 1}: No valid data; skipping customization options.")
+            if df is None and (not charts_data.get(f"Plot_{i + 1}") or len(charts_data.get(f"Chart_{i + 1}")) == 0):
+                st.warning(f"Plot {i + 1}: No valid data; skipping customization options.")
                 continue
             
-            with st.sidebar.expander(f'Customization Options - Chart {i+1}', expanded=(i==0)):
+            with st.sidebar.expander(f'Customization Options - Plot {i+1}', expanded=(i==0)):
                 
                 # --- Plot Choice --- 
                 st.markdown("### Plot Choices")
                 
                 if df is not None:
                     columns = df.columns.tolist()
-                    col = st.selectbox(f"Select column for chart {i+1}", columns, key=f'col_{i}')
+                    col = st.selectbox(f"Select column for plot {i+1}", columns, key=f'col_{i}')
                 else:
                     col = f"Manual Data {i+1}"
-
-                show_legend = st.checkbox("Show legend", value=True, key=f"show_legend_{i}")
-                show_title  = st.checkbox("Show chart title", value=True, key=f"show_title_{i}")
-                    
-                # --- Chart Line Choices ---
-                st.markdown("### Chart Lines")
-                num_lines = st.selectbox(f"Number of Grid Lines - Chart {i+1}", 
+                
+                # --- Plot Line Choices ---
+                st.markdown("### Plot Lines")
+                num_lines = st.selectbox(f"Number of Grid Lines - Plot {i+1}", 
                                      [1, 5, 10], index=2, key=f'num_lines_{i}')
-                line_width = st.slider(f"Grid Line Width - Chart {i+1}", 
+                line_width = st.slider(f"Grid Line Width - Plot {i+1}", 
                                        0.5, 5.0, 0.8, key=f'line_width_{i}')
-                line_color_1 = st.color_picker(f"Grid Line Color 1 - Chart {i+1}", 
+                line_color_1 = st.color_picker(f"Grid Line Color 1 - Plot {i+1}", 
                                                "#FF0000", key=f'lc1_{i}')
-                line_color_2 = st.color_picker(f"Grid Line Color 2 - Chart {i+1}", 
+                line_color_2 = st.color_picker(f"Grid Line Color 2 - Plot {i+1}", 
                                                "#0000FF", key=f'lc2_{i}')
-                line_color_3 = st.color_picker(f"Grid Line Color 3 - Chart {i+1}", 
+                line_color_3 = st.color_picker(f"Grid Line Color 3 - Plot {i+1}", 
                                                "#008000", key=f'lc3_{i}')
-                edge_color = st.color_picker(f"Edge Color - Chart {i+1}", 
+                edge_color = st.color_picker(f"Edge Color - Plot {i+1}", 
                                                "#0000FF", key=f'edge_color_{i}')
                 
                 # --- Transformation Choices ---
                 st.markdown("### Transformations")
-                shift_x = st.number_input(f"X Shift - Chart {i+1}", 
+                shift_x = st.number_input(f"X Shift - Plot {i+1}", 
                                           value=0, step=1, key=f'shift_x_{i}')
-                shift_y = st.number_input(f"Y Shift - Chart {i+1}", 
+                shift_y = st.number_input(f"Y Shift - Plot {i+1}", 
                                           value=0, step=1, key=f'shift_y_{i}')
-                angle = st.slider(f"Rotation Angle (degrees) - Chart {i+1}", 
+                angle = st.slider(f"Rotation Angle (degrees) - Plot {i+1}", 
                                   0, 360, 0, key=f'angle_{i}')
-                magnification = st.selectbox(f"Magnification - Chart {i+1}", 
-                            [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], index=3, key=f'magnification{i}')
+                magnification = st.slider(f"Magnification - Plot {i+1}",
+                                          min_value=0.25, max_value=2.0,
+                                          step=0.05, value=1.0, key=f'magnification_{i}')
                 
                 # --- Tick Choices ---
-                left_tick = st.slider(f"Left Tick - Chart {i+1}", min_value=0, 
+                left_tick = st.slider(f"Left Tick - Plot {i+1}", min_value=0, 
                         max_value=100, value=0, step=num_lines, key=f'left_tick_{i}')
-                right_tick = st.slider(f"Right Tick - Chart {i+1}", 
+                right_tick = st.slider(f"Right Tick - Plot {i+1}", 
                         min_value=0, max_value=100, value=0, step=num_lines, key=f'right_tick_{i}')
-                top_tick = st.slider(f"Top Tick - Chart {i+1}", min_value=0, 
+                top_tick = st.slider(f"Top Tick - Plot {i+1}", min_value=0, 
                         max_value=100, value=0, step=num_lines, key=f'top_tick_{i}')
                 ticks = [["L", left_tick], ["R", right_tick], ["T", top_tick]]
                 
-                # --- Chart Label Choices ---
-                st.markdown("### Chart Labels")
-                labels = st.checkbox(f"Show Axis Labels - Chart {i+1}", 
+                # --- Plot Label Choices ---
+                st.markdown("### Plot Labels")
+                labels = st.checkbox(f"Show Axis Labels - Plot {i+1}", 
                                      value=False, key=f'labels_{i}')
-                left_label_color = st.color_picker(f"Bottom Label Color - Chart {i+1}", "#0000FF", key=f"left_label_color_{i}")
-                right_label_color = st.color_picker(f"Right Label Color - Chart {i+1}", "#008000", key=f"right_label_color_{i}")
-                top_label_color = st.color_picker(f"Left Label Color - Chart {i+1}", "#FF0000", key=f"top_label_color_{i}")
+                left_label_color = st.color_picker(f"Bottom Label Color - Plot {i+1}",
+                                        "#0000FF", key=f"left_label_color_{i}")
+                right_label_color = st.color_picker(f"Right Label Color - Plot {i+1}", 
+                                        "#008000", key=f"right_label_color_{i}")
+                top_label_color = st.color_picker(f"Left Label Color - Plot {i+1}", 
+                                        "#FF0000", key=f"top_label_color_{i}")
+                corner_label_choice = st.checkbox(f"Show Corner (Axis) Labels - Plot {i+1}", 
+                                        value=False, key=f'corner_labels_{i}')
+                corner_label_colors = {
+                    'A': st.color_picker(f"Corner Label A Color - Plot {i+1}", 
+                                         "#FF0000", key=f"corner_label_a_color_{i}"),
+                    'B': st.color_picker(f"Corner Label B Color - Plot {i+1}", 
+                                         "#0000FF", key=f"corner_label_b_color_{i}"),
+                    'C': st.color_picker(f"Corner Label C Color - Plot {i+1}", 
+                                         "#008000", key=f"corner_label_c_color_{i}"),}
                 
                 # --- Contour Choices ---
                 st.markdown("### Contours")
-                contours = st.checkbox(f"Enable Contours - Chart {i+1}", 
+                contours = st.checkbox(f"Enable Contours - Plot {i+1}", 
                                        value=False, key=f'contours_{i}')
-                contour_levels = st.number_input(f"Contour Levels - Chart {i+1}",
+                contour_levels = st.number_input(f"Contour Levels - Plot {i+1}",
                                                  1, 50, 15, key=f'contour_levels_{i}')
-                cmap = st.selectbox(f"Colormap - Chart {i+1}", colormap_options, 
+                cmap = st.selectbox(f"Colormap - Plot {i+1}", colormap_options, 
                                     index=colormap_options.index("Blues"), key=f'cmap_{i}')
+                show_data_with_contours = st.checkbox(f"Show Data Points with Contours - Plot {i+1}", 
+                                                      value=True, key=f"show_data_with_contours_{i}")
+                contour_type = st.selectbox(f"Contour Type - Plot {i+1}", options=["density", "variable"],
+                                            index=0, key=f'contour_type_{i}')
+                variable_data_input = ""
+                if contour_type == "variable":
+                    variable_data_input = st.text_area(
+                        f"Variable Values (comma-separated) - Plot {i+1}",
+                        help="Enter a list of numeric values corresponding to each data point",
+                        key=f"variable_values_{i}")
                 
                 # --- Marker Choices ---
                 st.markdown("### Markers")
-                marker_color = st.color_picker(f"Marker Color - Chart {i+1}", 
+                marker_color = st.color_picker(f"Marker Color - Plot {i+1}", 
                                                "#0000FF", key=f'marker_color_{i}')
-                marker_style = st.selectbox(f"Marker Style - Chart {i+1}", 
+                marker_style = st.selectbox(f"Marker Style - Plot {i+1}", 
                                 ["o", "s", "^", "D", "*"], key=f'marker_style_{i}')
-                marker_size = st.slider(f"Marker Size - Chart {i+1}", 
+                marker_size = st.slider(f"Marker Size - Plot {i+1}", 
                                         10, 200, 50, key=f'marker_size{i}')
+                remove_outside_points = st.checkbox(f"Remove Outside Points - Plot {i+1}", 
+                                                value=True, key=f'remove_outside_points_{i}')
                 
                 # --- Segment Lines ---
                 st.markdown("### Segment Lines")
                 coord_system = "Cartesian"
                 st.write("Segment Lines will be interpreted as Cartesian coordinates (e.g., 50,0 -> 50,86).")
-                line_segments_input = st.text_area(f"Line Segments - Chart {i+1} (one per line)",
+                line_segments_input = st.text_area(f"Line Segments - Plot {i+1} (one per line)",
                     key=f'line_segments_input_{i}')
-                segment_line_color = st.color_picker(f"Segment Line Color - Chart {i+1}", "#000000", key=f"segment_line_color_{i}")
-                segment_line_width = st.slider(f"Segment Line Width - Chart {i+1}", 0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
+                segment_line_color = st.color_picker(f"Segment Line Color - Plot {i+1}", 
+                                                     "#000000", key=f"segment_line_color_{i}")
+                segment_line_width = st.slider(f"Segment Line Width - Plot {i+1}", 
+                                               0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
                 # --- Segment Labels ---
                 st.markdown("### Segment Labels")
                 num_seg_labels = st.number_input(
-                    f"How many segment labels for Chart {i+1}?", 
+                    f"How many segment labels for Plot {i+1}?", 
                     min_value=0, max_value=10, value=0, step=1, key=f"nlabels_{i}")
                 
                 segment_labels = []
@@ -722,16 +820,20 @@ Ternary_Chart_1
                         "shift_x": shift_x, "shift_y": shift_y, "angle": angle,
                         "magnification": magnification, "ticks": ticks,
                         "colors": [line_color_1, line_color_2, line_color_3],
-                        "marker_color": marker_color, "marker_style": marker_style, "marker_size": marker_size,
-                        "labels": labels, "contours": contours, "contour_levels": contour_levels,
+                        "marker_color": marker_color, "marker_style": marker_style, 
+                        "marker_size": marker_size, "labels": labels, 
+                        "contours": contours, "contour_levels": contour_levels,
+                        "show_data_with_contours": show_data_with_contours,
+                        "contour_type": contour_type, "variable_data_input": variable_data_input,
                         "num_lines": num_lines, "line_width": line_width, "cmap": cmap,
                         "coord_system": coord_system, "left_label_color": left_label_color, 
                         "right_label_color": right_label_color, "top_label_color": top_label_color,
                         "edge_color": edge_color, "coord_system": coord_system,
                         "line_segments_input": line_segments_input, "segment_line_color": segment_line_color,
                         "segment_line_width": segment_line_width,
-                        "cartesian_labels": segment_labels
-                    })
+                        "cartesian_labels": segment_labels, "corner_label_choice": corner_label_choice,
+                        "corner_label_colors": corner_label_colors, 
+                        "remove_outside_points": remove_outside_points,})
             
         errors = set()
         
@@ -799,13 +901,39 @@ Ternary_Chart_1
             
             for error in errors:
                 st.warning(error)
-        
+                
+            variable_data = []
+            if settings["contour_type"] == "variable" and settings["variable_data_input"].strip():
+                try:
+                    variable_data = [float(v.strip()) for v in settings["variable_data_input"].split(",") if v.strip()]
+                except ValueError:
+                    st.warning(f"⚠️ Chart {i+1}: Some variable contour values could not be converted to float.")
+
+            if settings["corner_label_choice"]:
+                corner_labels = [['A', [-8, -3]], ['B', [108, -3]], ['C', [50, 93]]]
+                for label, coord in corner_labels:
+                    coords = np.array([[coord[0], coord[1]]])
+                    coords = transform_coordinates(
+                        coords,
+                        angle=settings["angle"],
+                        center=center,
+                        shift_x=settings["shift_x"],
+                        shift_y=settings["shift_y"],
+                        magnifications=settings["magnification"],
+                    )
+                    x, y = coords[0]
+                    ax.text(
+                        x, y, label,
+                        ha='center', va='center',
+                        fontsize=12,
+                        fontweight='bold',
+                        color=settings["corner_label_colors"][label])
+
             try:
                 plot_on_ax(
                     ax, new_col_data, 
                     color=settings["marker_color"],  
-                    marker=settings["marker_style"], 
-                    label=f"Ternary Chart {i+1}",
+                    marker=settings["marker_style"],
                     center=center,
                     angle=settings["angle"],
                     magnifications=settings["magnification"],
@@ -827,25 +955,30 @@ Ternary_Chart_1
                     top_label_color=settings["top_label_color"],
                     edge_color=settings["edge_color"],
                     cartesian_labels=settings.get("cartesian_labels", []),
-                    cartesian_label_style=settings.get("cartesian_label_style", {})
-                )
+                    cartesian_label_style=settings.get("cartesian_label_style", {}),
+                    show_data_with_contours=settings["show_data_with_contours"],
+                    contour_type=settings["contour_type"], 
+                    remove_outside_points=settings["remove_outside_points"],
+                    variable_data=variable_data)
                 
             except ValueError as e:
                 st.warning(f"⚠️ Customization Error in Chart {i+1}: {e} Please change input and try again.")
                 plot_success = False
+                
+        if st.session_state.get("show_title_main", True):
+            fig.suptitle(
+                st.session_state.get("chart_title_text", "Ternary Plot(s)"),
+                fontsize=st.session_state.get("chart_title_fontsize", 16),
+                ha=st.session_state.get("chart_title_halign", "center"),
+                y=st.session_state.get("chart_title_yoffset", 1.02))
+            
+        if st.session_state.get("show_legend_global", True):
+            x_offset = st.session_state.get("legend_x_offset", 0.0)
+            y_offset = st.session_state.get("legend_y_offset", 1.0)
+            ax.legend(bbox_to_anchor=(x_offset, y_offset))
 
         if plot_success:
             ax.set_aspect('equal')
-            if show_legend:
-                ax.legend()
-            else:
-                leg = ax.get_legend()
-                if leg:
-                    leg.remove()
-            if show_title:
-                ax.set_title("Ternary Plot(s)")
-            else:
-                ax.set_title("")
             plt.tight_layout()
             plt.axis('off')
             ax.set_axis_off()
