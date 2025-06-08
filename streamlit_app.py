@@ -575,7 +575,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
 
 def main():
     
-    st.title("Ternary Chart Creator")
+    st.title("Ternary Chart Visualization Tool")
     st.write('''
 Use this application to create 1-4 ternary charts.  
 :gray[*Please note that this application is a work in progress.*]''')
