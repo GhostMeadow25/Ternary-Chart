@@ -777,7 +777,7 @@ Ternary_Plot_1
                 marker_size = st.slider(f"Marker Size - Plot {i+1}", 
                                         10, 200, 50, key=f'marker_size{i}')
                 remove_outside_points = st.checkbox(f"Remove Outside Points - Plot {i+1}", 
-                                                value=True, key=f'remove_outside_points_{i}')
+                                                value=False, key=f'remove_outside_points_{i}')
                 
                 # --- Segment Lines ---
                 st.markdown("### Segment Lines")
