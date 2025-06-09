@@ -575,13 +575,13 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
 
 def main():
     
-    st.title("Ternary Chart Visualization Tool")
+    st.title("Ternary Plot Visualization Tool")
     st.write('''
-Use this application to create 1-4 ternary charts.  
+Use this application to create 1-4 ternary plots.  
 :gray[*Please note that this application is a work in progress.*]''')
 
     
-    num_charts = st.slider("Number of Ternary Charts", 1, 4, 1)
+    num_charts = st.slider("Number of Ternary Plots", 1, 4, 1)
 
     data_choice = st.radio("Select Data Input Method", 
                            ["Upload CSV File", "Enter Data Manually"])
@@ -593,12 +593,12 @@ Use this application to create 1-4 ternary charts.
     if data_choice == "Upload CSV File":
         st.write('''
 Upload a .csv file with ternery coords.  
-Each column should contain the coords for one ternary chart.  
+Each column should contain the coords for one ternary plot.  
 Each cell should be in the form: x, y, z, and should add to 1.
 
 Example:
     
-Ternary_Chart_1
+Ternary_Plot_1
 
 0.33,0.33,0.34
 
@@ -676,7 +676,7 @@ Ternary_Chart_1
                           value=1.02, step=0.01, key="chart_title_yoffset")
                 
         for i in range(num_charts):
-            if df is None and (not charts_data.get(f"Plot_{i + 1}") or len(charts_data.get(f"Chart_{i + 1}")) == 0):
+            if df is None and (not charts_data.get(f"Plot_{i + 1}") or len(charts_data.get(f"Plot_{i + 1}")) == 0):
                 st.warning(f"Plot {i + 1}: No valid data; skipping customization options.")
                 continue
             
@@ -844,7 +844,7 @@ Ternary_Chart_1
             if df is not None:
                 col_data = df[settings["col"]].dropna().astype(str).tolist()
             else:
-                col_data = charts_data.get(f"Chart_{i + 1}", [])
+                col_data = charts_data.get(f"Plot_{i + 1}", [])
 
             new_col_data = []
             for coord in col_data:
@@ -861,10 +861,10 @@ Ternary_Chart_1
                     st.warning(f"Skipping invalid row (could not convert to float): {coord}")
                                     
             if not new_col_data:
-                st.warning(f"Chart {i + 1}: No valid data available, skipping plot.")
+                st.warning(f"Plot {i + 1}: No valid data available, skipping plot.")
                 continue
                     
-            chart_key = f"chart_{i}_center_{settings['shift_x']}_{settings['shift_y']}"
+            chart_key = f"Plot_{i}_center_{settings['shift_x']}_{settings['shift_y']}"
 
             if chart_key not in st.session_state.centers:
                 center = compute_ternary_center(ax, settings["shift_x"], settings["shift_y"])
@@ -905,7 +905,7 @@ Ternary_Chart_1
                 try:
                     variable_data = [float(v.strip()) for v in settings["variable_data_input"].split(",") if v.strip()]
                 except ValueError:
-                    st.warning(f"⚠️ Chart {i+1}: Some variable contour values could not be converted to float.")
+                    st.warning(f"⚠️ Plot {i+1}: Some variable contour values could not be converted to float.")
 
             if settings["corner_label_choice"]:
                 corner_labels = [['A', [-8, -3]], ['B', [108, -3]], ['C', [50, 93]]]
@@ -932,7 +932,7 @@ Ternary_Chart_1
                     ax, new_col_data, 
                     color=settings["marker_color"],  
                     marker=settings["marker_style"],
-                    label=f"Ternary Chart {i+1}",
+                    label=f"Ternary Plot {i+1}",
                     center=center,
                     angle=settings["angle"],
                     magnifications=settings["magnification"],
@@ -961,7 +961,7 @@ Ternary_Chart_1
                     variable_data=variable_data)
                 
             except ValueError as e:
-                st.warning(f"⚠️ Customization Error in Chart {i+1}: {e} Please change input and try again.")
+                st.warning(f"⚠️ Customization Error in Plot {i+1}: {e} Please change input and try again.")
                 plot_success = False
                 
         if st.session_state.get("show_title_main", True):
