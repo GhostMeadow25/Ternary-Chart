@@ -672,7 +672,7 @@ Ternary_Plot_1
                           value=16, key="chart_title_fontsize")
                 st.selectbox("Title alignment", ["left", "center", "right"], 
                              index=1, key="chart_title_halign")
-                st.slider("Title Y offset", min_value=0.9, max_value=1.2, 
+                st.slider("Title Y offset", min_value=0.0, max_value=1.5, 
                           value=1.02, step=0.01, key="chart_title_yoffset")
                 
         for i in range(num_charts):
