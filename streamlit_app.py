@@ -373,7 +373,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                                             shift_x, shift_y, magnifications)
    
     ternary_vertices = edgs(ax, ticks, angle, center, shift_x, shift_y,
-                            magnifications)
+                            magnifications, edge_color=edge_color)
    
     
     point_verification = points_in_ternary(ternary_vertices, transformed_coords)
