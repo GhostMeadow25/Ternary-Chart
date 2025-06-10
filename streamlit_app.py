@@ -696,7 +696,7 @@ Ternary_Plot_1
                 # --- Plot Line Choices ---
                 st.markdown("### Plot Lines")
                 num_lines = st.selectbox(f"Number of Grid Lines - Plot {i+1}", 
-                                     [1, 5, 10, 15, 20], index=2, key=f'num_lines_{i}')
+                                     [1, 5, 10, 20], index=2, key=f'num_lines_{i}')
                 line_width = st.slider(f"Grid Line Width - Plot {i+1}", 
                                        0.5, 5.0, 0.8, key=f'line_width_{i}')
                 line_color_1 = st.color_picker(f"Grid Line Color 1 - Plot {i+1}", 
