@@ -365,7 +365,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
     tlines_output = Tlines(ax, num_lines, ticks, colors, linews, angle, center,
                            shift_x, shift_y, magnifications)
    
-    edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications)
+    edgs(ax, ticks, angle, center, shift_x, shift_y, magnifications, edge_color=edge_color)
    
     cart_coords = np.array(TtB(data))
    
