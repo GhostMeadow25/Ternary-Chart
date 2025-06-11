@@ -521,15 +521,15 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
             right_labels = right_labels[remove_top:]
        
         for (x, y), label in zip(LS_cart, left_labels):
-            ax.text(x, y, label, color=left_label_color, label_font_size,
+            ax.text(x, y, label, color=left_label_color, fontsize=label_font_size,
                     ha=left_label_ha, va=left_label_va)
 
         for (x, y), label in zip(RS_cart, right_labels):
-            ax.text(x, y, label, color=right_label_color, label_font_size,
+            ax.text(x, y, label, color=right_label_color, fontsize=label_font_size,
                     ha=right_label_ha, va=right_label_va)
 
         for (x, y), label in zip(TS_cart, top_labels):
-            ax.text(x, y, label, color=top_label_color, label_font_size,
+            ax.text(x, y, label, color=top_label_color, fontsize=label_font_size,
                     ha=top_label_ha, va=top_label_va)
         
     line_starts_transformed = []
@@ -740,7 +740,7 @@ Ternary_Plot_1
                                      value=False, key=f'labels_{i}')
 
                 label_font_size = st.number_input(f"Axis Label Font Size - Plot {i+1}",
-                    min_value=1, max_value=100, value=12 * magnifications, step=1,
+                    min_value=1, max_value=100, value=12, step=1,
                     key=f"label_font_size_{i}")
                 
                 left_label_ha = st.selectbox(f"Left Label Horizontal Align - Plot {i+1}",
