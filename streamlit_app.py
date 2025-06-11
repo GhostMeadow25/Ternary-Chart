@@ -328,7 +328,7 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                show_data_with_contours=True, contour_type="density", variable_data=None,
                remove_outside_points=False, left_label_ha='right', 
                 left_label_va='top', right_label_ha='left', right_label_va='center', top_label_ha='right', 
-                top_label_va='bottom'):
+                top_label_va='bottom', label_font_size=12):
     """
     Plot a single ternary plot on the given axis.
   
@@ -521,15 +521,15 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
             right_labels = right_labels[remove_top:]
        
         for (x, y), label in zip(LS_cart, left_labels):
-            ax.text(x, y, label, color=left_label_color, fontsize=12 * magnifications,
+            ax.text(x, y, label, color=left_label_color, label_font_size,
                     ha=left_label_ha, va=left_label_va)
 
         for (x, y), label in zip(RS_cart, right_labels):
-            ax.text(x, y, label, color=right_label_color, fontsize=12 * magnifications,
+            ax.text(x, y, label, color=right_label_color, label_font_size,
                     ha=right_label_ha, va=right_label_va)
 
         for (x, y), label in zip(TS_cart, top_labels):
-            ax.text(x, y, label, color=top_label_color, fontsize=12 * magnifications,
+            ax.text(x, y, label, color=top_label_color, label_font_size,
                     ha=top_label_ha, va=top_label_va)
         
     line_starts_transformed = []
@@ -738,6 +738,11 @@ Ternary_Plot_1
                 st.markdown("### Plot Labels")
                 labels = st.checkbox(f"Show Axis Labels - Plot {i+1}", 
                                      value=False, key=f'labels_{i}')
+
+                label_font_size = st.number_input(f"Axis Label Font Size - Plot {i+1}",
+                    min_value=1, max_value=100, value=12 * magnifications, step=1,
+                    key=f"label_font_size_{i}")
+                
                 left_label_ha = st.selectbox(f"Left Label Horizontal Align - Plot {i+1}",
                              ['left', 'center', 'right'], key=f"left_ha_{i}")
                 left_label_va = st.selectbox(f"Left Label Vertical Align - Plot {i+1}",
@@ -855,7 +860,8 @@ Ternary_Plot_1
                         "right_label_ha": right_label_ha,
                         "right_label_va": right_label_va,
                         "top_label_ha": top_label_ha,
-                        "top_label_va": top_label_va})
+                        "top_label_va": top_label_va,
+                        "label_font_size": label_font_size})
             
         errors = set()
         
@@ -990,6 +996,7 @@ Ternary_Plot_1
                     right_label_va=settings["right_label_va"],
                     top_label_ha=settings["top_label_ha"],
                     top_label_va=settings["top_label_va"],
+                    label_font_size=settings["label_font_size"],
                     variable_data=variable_data)
                 
             except ValueError as e:
