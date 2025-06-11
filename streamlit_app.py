@@ -326,7 +326,9 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
                left_label_color='red', right_label_color='blue', top_label_color='green',
                edge_color='blue', cartesian_labels=[], cartesian_label_style={},
                show_data_with_contours=True, contour_type="density", variable_data=None,
-               remove_outside_points=False):
+               remove_outside_points=False, left_label_ha='right', 
+                left_label_va='top', right_label_ha='left', right_label_va='center', top_label_ha='right', 
+                top_label_va='bottom'):
     """
     Plot a single ternary plot on the given axis.
   
@@ -519,13 +521,16 @@ def plot_on_ax(ax, data, color='blue', marker='o', label='Ternary Plot', angle=0
             right_labels = right_labels[remove_top:]
        
         for (x, y), label in zip(LS_cart, left_labels):
-            ax.text(x, y, label, color=left_label_color, fontsize=12 * magnifications, ha='right', va='top')
+            ax.text(x, y, label, color=left_label_color, fontsize=12 * magnifications,
+                    ha=left_label_ha, va=left_label_va)
 
         for (x, y), label in zip(RS_cart, right_labels):
-            ax.text(x, y, label, color=right_label_color, fontsize=12 * magnifications, ha='left', va='center')
+            ax.text(x, y, label, color=right_label_color, fontsize=12 * magnifications,
+                    ha=right_label_ha, va=right_label_va)
 
         for (x, y), label in zip(TS_cart, top_labels):
-            ax.text(x, y, label, color=top_label_color, fontsize=12 * magnifications, ha='right', va='bottom')
+            ax.text(x, y, label, color=top_label_color, fontsize=12 * magnifications,
+                    ha=top_label_ha, va=top_label_va)
         
     line_starts_transformed = []
     line_ends_transformed = []
@@ -733,6 +738,21 @@ Ternary_Plot_1
                 st.markdown("### Plot Labels")
                 labels = st.checkbox(f"Show Axis Labels - Plot {i+1}", 
                                      value=False, key=f'labels_{i}')
+                left_label_ha = st.selectbox(f"Left Label Horizontal Align - Plot {i+1}",
+                             ['left', 'center', 'right'], key=f"left_ha_{i}")
+                left_label_va = st.selectbox(f"Left Label Vertical Align - Plot {i+1}",
+                                             ['top', 'center', 'bottom', 'baseline'], key=f"left_va_{i}")
+                
+                right_label_ha = st.selectbox(f"Right Label Horizontal Align - Plot {i+1}",
+                                              ['left', 'center', 'right'], key=f"right_ha_{i}")
+                right_label_va = st.selectbox(f"Right Label Vertical Align - Plot {i+1}",
+                                              ['top', 'center', 'bottom', 'baseline'], key=f"right_va_{i}")
+                
+                top_label_ha = st.selectbox(f"Top Label Horizontal Align - Plot {i+1}",
+                                            ['left', 'center', 'right'], key=f"top_ha_{i}")
+                top_label_va = st.selectbox(f"Top Label Vertical Align - Plot {i+1}",
+                                            ['top', 'center', 'bottom', 'baseline'], key=f"top_va_{i}")
+                
                 left_label_color = st.color_picker(f"Bottom Label Color - Plot {i+1}",
                                         "#0000FF", key=f"left_label_color_{i}")
                 right_label_color = st.color_picker(f"Right Label Color - Plot {i+1}", 
@@ -829,7 +849,13 @@ Ternary_Plot_1
                         "segment_line_width": segment_line_width,
                         "cartesian_labels": segment_labels, "corner_label_choice": corner_label_choice,
                         "corner_label_colors": corner_label_colors, 
-                        "remove_outside_points": remove_outside_points,})
+                        "remove_outside_points": remove_outside_points,
+                        "left_label_ha": left_label_ha,
+                        "left_label_va": left_label_va,
+                        "right_label_ha": right_label_ha,
+                        "right_label_va": right_label_va,
+                        "top_label_ha": top_label_ha,
+                        "top_label_va": top_label_va})
             
         errors = set()
         
@@ -958,6 +984,12 @@ Ternary_Plot_1
                     show_data_with_contours=settings["show_data_with_contours"],
                     contour_type=settings["contour_type"], 
                     remove_outside_points=settings["remove_outside_points"],
+                    left_label_ha=settings["left_label_ha"],
+                    left_label_va=settings["left_label_va"],
+                    right_label_ha=settings["right_label_ha"],
+                    right_label_va=settings["right_label_va"],
+                    top_label_ha=settings["top_label_ha"],
+                    top_label_va=settings["top_label_va"],
                     variable_data=variable_data)
                 
             except ValueError as e:
