@@ -804,7 +804,7 @@ Ternary_Plot_1
                                                 value=False, key=f'remove_outside_points_{i}')
                 
                 # --- Segment Lines ---
-                st.markdown("### Segment Lines")
+                st.markdown("### Segments")
                 coord_system = "Cartesian"
                 st.write("Segment Lines will be interpreted as Cartesian coordinates (e.g., 50,0 -> 50,86).")
                 line_segments_input = st.text_area(f"Line Segments - Plot {i+1} (one per line)",
@@ -815,7 +815,6 @@ Ternary_Plot_1
                                                0.5, 5.0, 1.0, key=f"segment_line_width_{i}")
                 
                 # --- Segment Labels ---
-                st.markdown("### Segment Labels")
                 num_seg_labels = st.number_input(
                     f"How many segment labels for Plot {i+1}?", 
                     min_value=0, max_value=10, value=0, step=1, key=f"nlabels_{i}")
