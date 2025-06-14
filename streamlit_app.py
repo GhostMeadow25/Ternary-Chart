@@ -667,7 +667,7 @@ Ternary_Plot_1
         chart_settings = []
         colormap_options = plt.colormaps()
         
-        with st.sidebar.expander("Chart Options (entire plot)", expanded=True):
+        with st.sidebar.expander("Title Options", expanded=True):
             show_title = st.checkbox("Show chart title", value=True, key="show_title_main")
         
             if show_title:
@@ -699,7 +699,6 @@ Ternary_Plot_1
                 show_legend = st.checkbox("Show legend", value=True, key=f"show_legend_{i}")
                 
                 # --- Plot Line Choices ---
-                st.markdown("### Plot Lines")
                 num_lines = st.selectbox(f"Number of Grid Lines - Plot {i+1}", 
                                      [1, 5, 10, 20], index=2, key=f'num_lines_{i}')
                 line_width = st.slider(f"Grid Line Width - Plot {i+1}", 
